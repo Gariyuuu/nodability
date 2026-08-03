@@ -16,9 +16,14 @@ export default function Home() {
     <div className="flex h-screen flex-col bg-white text-gray-900">
       <header className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
         <h1 className="text-lg font-semibold">Nodability</h1>
-        <Link href="/week" className="text-sm text-gray-500 hover:text-gray-900">
-          This week →
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link href="/ideas" className="text-sm text-gray-500 hover:text-gray-900">
+            Ideas
+          </Link>
+          <Link href="/week" className="text-sm text-gray-500 hover:text-gray-900">
+            This week →
+          </Link>
+        </div>
       </header>
       <div className="flex flex-1 overflow-hidden">
         <div className="flex flex-1 gap-6 overflow-hidden p-6">

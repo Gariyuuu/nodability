@@ -115,9 +115,14 @@ export default function WeekPage() {
     <div className="flex h-screen flex-col bg-white text-gray-900">
       <header className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
         <h1 className="text-lg font-semibold">Nodability — This Week</h1>
-        <Link href="/" className="text-sm text-gray-500 hover:text-gray-900">
-          Chat + full board →
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link href="/ideas" className="text-sm text-gray-500 hover:text-gray-900">
+            Ideas
+          </Link>
+          <Link href="/" className="text-sm text-gray-500 hover:text-gray-900">
+            Chat + full board →
+          </Link>
+        </div>
       </header>
       <div className="flex-1 overflow-y-auto p-6">
         {loading ? (
