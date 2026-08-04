@@ -1,4 +1,5 @@
 import { anthropic, SONNET_MODEL } from "@/lib/anthropic";
+import { requireUserId, UnauthorizedError } from "@/lib/auth";
 import { extractTasks } from "@/lib/categorize";
 import { NODABILITY_SYSTEM_PROMPT } from "@/lib/prompts";
 import {
@@ -12,14 +13,24 @@ import {
 import { insertMessage, listRecentMessages } from "@/lib/messages";
 
 export async function POST(req: Request) {
+  let userId: string;
+  try {
+    userId = await requireUserId();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return new Response("unauthorized", { status: 401 });
+    }
+    throw err;
+  }
+
   const { message } = await req.json();
   if (!message || typeof message !== "string") {
     return new Response("message is required", { status: 400 });
   }
 
   const [categories, recentMessages] = await Promise.all([
-    listCategories(),
-    listRecentMessages(20),
+    listCategories(userId),
+    listRecentMessages(userId, 20),
   ]);
 
   const conversationHistory = recentMessages.map((m) => ({
@@ -36,8 +47,8 @@ export async function POST(req: Request) {
   const actionLines: string[] = [];
 
   for (const task of extraction.tasks) {
-    const category = await getOrCreateCategory(task.category);
-    await insertTask({
+    const category = await getOrCreateCategory(userId, task.category);
+    await insertTask(userId, {
       title: task.title,
       categoryId: category.id,
       startDate: task.start_date,
@@ -54,7 +65,7 @@ export async function POST(req: Request) {
   }
 
   for (const categoryName of extraction.delete_categories) {
-    const result = await deleteCategoryByName(categoryName);
+    const result = await deleteCategoryByName(userId, categoryName);
     actionLines.push(
       result.found
         ? `Deleted category "${result.categoryName}" and its ${result.deletedTaskCount} task(s).`
@@ -63,7 +74,7 @@ export async function POST(req: Request) {
   }
 
   for (const taskToDelete of extraction.delete_tasks) {
-    const result = await deleteTaskByTitle(taskToDelete.title, taskToDelete.category);
+    const result = await deleteTaskByTitle(userId, taskToDelete.title, taskToDelete.category);
     actionLines.push(
       result.found
         ? `Deleted task(s): ${result.deletedTitles.join(", ")}.`
@@ -74,7 +85,7 @@ export async function POST(req: Request) {
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const openTasks = (await listTasks()).filter((t) => t.status === "open");
+  const openTasks = (await listTasks(userId)).filter((t) => t.status === "open");
   const contextBlock =
     openTasks.length === 0
       ? "No open tasks currently stored."
@@ -119,8 +130,8 @@ export async function POST(req: Request) {
       await stream.finalMessage();
       controller.close();
 
-      await insertMessage("user", message);
-      await insertMessage("assistant", fullReply);
+      await insertMessage(userId, "user", message);
+      await insertMessage(userId, "assistant", fullReply);
     },
   });
 

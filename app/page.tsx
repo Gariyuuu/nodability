@@ -5,6 +5,7 @@ import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import TaskBoard from "@/components/TaskBoard";
 import ChatPanel from "@/components/ChatPanel";
+import { signOutAction } from "@/lib/actions";
 
 export default function Home() {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -23,6 +24,11 @@ export default function Home() {
           <Link href="/week" className="text-sm text-gray-500 hover:text-gray-900">
             This week →
           </Link>
+          <form action={signOutAction}>
+            <button type="submit" className="text-sm text-gray-500 hover:text-gray-900">
+              Sign out
+            </button>
+          </form>
         </div>
       </header>
       <div className="flex flex-1 overflow-hidden">
