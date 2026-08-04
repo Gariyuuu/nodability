@@ -7,7 +7,7 @@ import {
   getOrCreateCategory,
   insertTask,
   listCategories,
-  listOpenTasks,
+  listTasks,
 } from "@/lib/tasks";
 import { insertMessage, listRecentMessages } from "@/lib/messages";
 
@@ -74,7 +74,7 @@ export async function POST(req: Request) {
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const openTasks = await listOpenTasks();
+  const openTasks = (await listTasks()).filter((t) => t.status === "open");
   const contextBlock =
     openTasks.length === 0
       ? "No open tasks currently stored."

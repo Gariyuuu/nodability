@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { deleteTask, listOpenTasks, toggleTaskStatus } from "@/lib/tasks";
+import { deleteTask, listTasks, toggleTaskStatus } from "@/lib/tasks";
 
 export async function GET() {
-  const tasks = await listOpenTasks();
+  const tasks = await listTasks();
   return NextResponse.json({ tasks });
 }
 

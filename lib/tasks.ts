@@ -68,7 +68,7 @@ export async function insertTask(params: {
   return data;
 }
 
-export async function listOpenTasks(): Promise<(Task & { category_name: string | null })[]> {
+export async function listTasks(): Promise<(Task & { category_name: string | null })[]> {
   const { data, error } = await supabase
     .from("tasks")
     .select("*, categories(name)")
