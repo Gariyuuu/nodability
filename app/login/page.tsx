@@ -9,6 +9,7 @@ function LoginForm() {
   const callbackError = searchParams.get("error");
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [sendError, setSendError] = useState<string | null>(null);
 
   const sendLink = async () => {
     const trimmed = email.trim();
@@ -23,6 +24,7 @@ function LoginForm() {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
+    setSendError(error?.message ?? null);
     setStatus(error ? "error" : "sent");
   };
 
@@ -61,7 +63,7 @@ function LoginForm() {
             </button>
             {status === "error" ? (
               <p className="mt-3 text-sm text-red-600">
-                Couldn&apos;t send a link for that address.
+                Couldn&apos;t send a link: {sendError ?? "unknown error"}
               </p>
             ) : null}
           </>
