@@ -13,6 +13,8 @@ import type { CategoryGroup } from "@/lib/tasks";
 type ViewMode = "week" | "month" | "year";
 type GroupFilter = "all" | CategoryGroup;
 
+const VIEW_EMOJI: Record<ViewMode, string> = { week: "🗓️", month: "📆", year: "🌍" };
+
 export default function CalendarPage() {
   const [tasks, setTasks] = useState<CalendarTask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,10 +67,10 @@ export default function CalendarPage() {
   return (
     <div className="flex h-screen flex-col text-fg">
       <header className="flex items-center justify-between border-b border-border px-6 py-4">
-        <h1 className="text-lg font-semibold">Nodability — Calendar</h1>
+        <h1 className="text-lg font-semibold">📅 Nodability — Calendar</h1>
         <div className="flex items-center gap-4">
           <Link href="/ideas" className="text-sm text-muted hover:text-fg">
-            Ideas
+            💡 Ideas
           </Link>
           <Link href="/" className="text-sm text-muted hover:text-fg">
             Chat + full board →
@@ -86,7 +88,7 @@ export default function CalendarPage() {
                 view === v ? "bg-accent text-accent-fg" : "text-muted hover:bg-surface"
               }`}
             >
-              {v}
+              {VIEW_EMOJI[v]} {v}
             </button>
           ))}
         </div>
@@ -97,7 +99,7 @@ export default function CalendarPage() {
               groupFilter === "all" ? "bg-accent text-accent-fg" : "text-muted hover:bg-surface"
             }`}
           >
-            All
+            🗂️ All
           </button>
           {GROUP_ORDER.map((g) => (
             <button
@@ -114,7 +116,7 @@ export default function CalendarPage() {
       </div>
       <div className="flex-1 overflow-y-auto p-6">
         {loading ? (
-          <p className="text-sm text-muted">Loading…</p>
+          <p className="text-sm text-muted">⏳ Loading…</p>
         ) : view === "week" ? (
           <WeekView tasks={visibleTasks} onToggle={toggle} onRemove={remove} />
         ) : view === "month" ? (

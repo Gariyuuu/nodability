@@ -44,7 +44,7 @@ export default function Sidebar({
   return (
     <nav className="w-48 shrink-0 border-r border-border pr-4">
       <h2 className="mb-1 text-xs font-semibold text-muted uppercase tracking-wide">
-        Categories
+        🏷️ Categories
       </h2>
       {categories.length > 0 ? (
         <p className="mb-3 text-[11px] leading-snug text-muted">
@@ -60,7 +60,7 @@ export default function Sidebar({
               selected === null ? "bg-accent text-accent-fg" : "text-fg hover:bg-surface"
             }`}
           >
-            All
+            🗂️ All
           </button>
         </li>
         {categories.map((c) => (

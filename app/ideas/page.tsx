@@ -64,7 +64,7 @@ export default function IdeasPage() {
   return (
     <div className="flex h-screen flex-col text-fg">
       <header className="flex items-center justify-between border-b border-border px-6 py-4">
-        <h1 className="text-lg font-semibold">Nodability — Ideas</h1>
+        <h1 className="text-lg font-semibold">💡 Nodability — Ideas</h1>
         <div className="flex items-center gap-4">
           <Link href="/" className="text-sm text-muted hover:text-fg">
             Chat + full board →
@@ -93,14 +93,14 @@ export default function IdeasPage() {
               disabled={saving || !input.trim()}
               className="self-end rounded bg-accent px-4 py-2 text-sm text-accent-fg disabled:opacity-50"
             >
-              Save
+              Save ✏️
             </button>
           </div>
 
           {loading ? (
-            <p className="text-sm text-muted">Loading…</p>
+            <p className="text-sm text-muted">⏳ Loading…</p>
           ) : ideas.length === 0 ? (
-            <p className="text-sm text-muted">No ideas yet — jot one down above.</p>
+            <p className="text-sm text-muted">💭 No ideas yet — jot one down above.</p>
           ) : (
             <ul className="space-y-2">
               {ideas.map((idea) => (

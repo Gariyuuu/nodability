@@ -1,7 +1,8 @@
 import { anthropic, SONNET_MODEL } from "@/lib/anthropic";
 import { requireUserId, UnauthorizedError } from "@/lib/auth";
 import { extractTasks } from "@/lib/categorize";
-import { NODABILITY_SYSTEM_PROMPT } from "@/lib/prompts";
+import { buildSystemPrompt } from "@/lib/prompts";
+import { findPersonality } from "@/lib/personalities";
 import {
   deleteCategoryByName,
   deleteTaskByTitle,
@@ -24,14 +25,16 @@ export async function POST(req: Request) {
   }
 
   let message: unknown;
+  let personalityId: unknown;
   try {
-    ({ message } = await req.json());
+    ({ message, personalityId } = await req.json());
   } catch {
     return new Response("invalid JSON body", { status: 400 });
   }
   if (!message || typeof message !== "string") {
     return new Response("message is required", { status: 400 });
   }
+  const personality = findPersonality(typeof personalityId === "string" ? personalityId : null);
 
   // Everything from here on can fail (Haiku extraction, Supabase writes, building the
   // Sonnet stream) — catch it so a failure returns a clean error response instead of an
@@ -116,7 +119,7 @@ export async function POST(req: Request) {
     const stream = anthropic.messages.stream({
       model: SONNET_MODEL,
       max_tokens: 1024,
-      system: NODABILITY_SYSTEM_PROMPT,
+      system: buildSystemPrompt(personality),
       messages: [
         ...conversationHistory,
         {

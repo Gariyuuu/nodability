@@ -60,7 +60,7 @@ export default function TaskBoard({
   };
 
   if (loading) {
-    return <p className="text-sm text-muted">Loading tasks…</p>;
+    return <p className="text-sm text-muted">⏳ Loading tasks…</p>;
   }
 
   const visibleTasks = filterCategory
@@ -78,7 +78,7 @@ export default function TaskBoard({
   if (categoryNames.length === 0) {
     return (
       <p className="text-sm text-muted">
-        No tasks yet — tell the chat what you have to do, or grab a template above, and
+        ✨ No tasks yet — tell the chat what you have to do, or grab a template above, and
         it&apos;ll show up here.
       </p>
     );
@@ -107,6 +107,7 @@ export default function TaskBoard({
                       : "text-fg"
                   }
                 >
+                  {task.status === "done" ? "🎉 " : ""}
                   {task.title}
                 </span>
                 {formatTaskWhen(task.start_date, task.end_date, task.due_time) && (

@@ -26,7 +26,7 @@ export default function TemplatesPage() {
   return (
     <div className="flex h-screen flex-col text-fg">
       <header className="flex items-center justify-between border-b border-border px-6 py-4">
-        <h1 className="text-lg font-semibold">Nodability — Templates</h1>
+        <h1 className="text-lg font-semibold">🧩 Nodability — Templates</h1>
         <Link href="/" className="text-sm text-muted hover:text-fg">
           Back to board →
         </Link>
@@ -43,7 +43,9 @@ export default function TemplatesPage() {
                 key={t.id}
                 className="flex flex-col rounded-lg border border-border bg-surface p-4"
               >
-                <h2 className="mb-1 text-sm font-semibold text-fg">{t.name}</h2>
+                <h2 className="mb-1 text-sm font-semibold text-fg">
+                  {t.emoji} {t.name}
+                </h2>
                 <p className="mb-3 text-xs text-muted">{t.description}</p>
                 <ul className="mb-4 flex-1 space-y-1">
                   {t.tasks.map((task, i) => (
@@ -57,7 +59,7 @@ export default function TemplatesPage() {
                   disabled={applying !== null}
                   className="w-full rounded bg-accent px-3 py-2 text-sm text-accent-fg disabled:opacity-50"
                 >
-                  {applying === t.id ? "Adding…" : "Use this template"}
+                  {applying === t.id ? "Adding…" : `Use this template ${t.emoji}`}
                 </button>
               </div>
             ))}

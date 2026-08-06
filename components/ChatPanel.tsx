@@ -1,18 +1,39 @@
 "use client";
 
 import { useState } from "react";
+import { PERSONALITIES, findPersonality } from "@/lib/personalities";
 
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
 }
 
-const SUGGESTIONS = ["What do I have today?", "What's due this week?", "What haven't I finished?"];
+const SUGGESTIONS = [
+  "📋 What do I have today?",
+  "📅 What's due this week?",
+  "🧹 What haven't I finished?",
+];
+
+const PERSONALITY_STORAGE_KEY = "nodability-personality";
+
+function readStoredPersonalityId(): string {
+  if (typeof window === "undefined") return PERSONALITIES[0].id;
+  return localStorage.getItem(PERSONALITY_STORAGE_KEY) ?? PERSONALITIES[0].id;
+}
 
 export default function ChatPanel({ onTasksChanged }: { onTasksChanged: () => void }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [personalityId, setPersonalityIdState] = useState<string>(readStoredPersonalityId);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const personality = findPersonality(personalityId);
+
+  const setPersonalityId = (id: string) => {
+    setPersonalityIdState(id);
+    localStorage.setItem(PERSONALITY_STORAGE_KEY, id);
+    setPickerOpen(false);
+  };
 
   const send = async (override?: string) => {
     const text = (override ?? input).trim();
@@ -26,7 +47,7 @@ export default function ChatPanel({ onTasksChanged }: { onTasksChanged: () => vo
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: text, personalityId }),
       });
 
       if (!res.ok) {
@@ -67,21 +88,59 @@ export default function ChatPanel({ onTasksChanged }: { onTasksChanged: () => vo
 
   return (
     <div className="flex h-full flex-col">
-      <div className="mb-3 flex items-center gap-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-sm text-accent-fg">
-          🌱
-        </span>
-        <div>
-          <p className="text-sm font-semibold leading-tight">Nodo</p>
-          <p className="text-xs leading-tight text-muted">your task sidekick</p>
-        </div>
+      <div className="relative mb-3 flex items-center gap-2">
+        <button
+          onClick={() => setPickerOpen((v) => !v)}
+          className="flex flex-1 items-center gap-2 rounded-lg p-1 text-left hover:bg-surface"
+          title="Change AI personality"
+        >
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-sm text-accent-fg">
+            {personality.emoji}
+          </span>
+          <span>
+            <span className="block text-sm font-semibold leading-tight">
+              {personality.name} <span className="text-muted">▾</span>
+            </span>
+            <span className="block text-xs leading-tight text-muted">{personality.tagline}</span>
+          </span>
+        </button>
+
+        {pickerOpen ? (
+          <div className="absolute left-0 top-full z-10 mt-1 w-64 rounded-lg border border-border bg-surface p-2 shadow-lg">
+            <p className="mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-muted">
+              Choose a personality
+            </p>
+            <ul className="space-y-0.5">
+              {PERSONALITIES.map((p) => (
+                <li key={p.id}>
+                  <button
+                    onClick={() => setPersonalityId(p.id)}
+                    className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm ${
+                      p.id === personalityId ? "bg-accent text-accent-fg" : "text-fg hover:bg-bg"
+                    }`}
+                  >
+                    <span>{p.emoji}</span>
+                    <span>
+                      <span className="block leading-tight">{p.name}</span>
+                      <span
+                        className={`block text-[11px] leading-tight ${
+                          p.id === personalityId ? "text-accent-fg/80" : "text-muted"
+                        }`}
+                      >
+                        {p.tagline}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </div>
       <div className="flex-1 space-y-3 overflow-y-auto pr-1">
         {messages.length === 0 && (
           <div>
-            <p className="mb-3 text-sm text-muted">
-              Hey — tell me what you&apos;ve got going on and I&apos;ll get it organized.
-            </p>
+            <p className="mb-3 text-sm text-muted">{personality.greeting}</p>
             <div className="flex flex-wrap gap-2">
               {SUGGESTIONS.map((s) => (
                 <button
@@ -104,7 +163,7 @@ export default function ChatPanel({ onTasksChanged }: { onTasksChanged: () => vo
                 : "bg-surface text-fg"
             }`}
           >
-            {m.content || (m.role === "assistant" && sending ? "…" : "")}
+            {m.content || (m.role === "assistant" && sending ? `${personality.emoji} …` : "")}
           </div>
         ))}
       </div>
@@ -121,7 +180,7 @@ export default function ChatPanel({ onTasksChanged }: { onTasksChanged: () => vo
           disabled={sending}
           className="rounded bg-accent px-4 py-2 text-sm text-accent-fg disabled:opacity-50"
         >
-          Send
+          Send ✨
         </button>
       </div>
     </div>

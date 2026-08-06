@@ -22,7 +22,7 @@ function DayCard({
     <div className={`rounded-lg border p-3 ${isToday ? "border-accent" : "border-border"}`}>
       <h3 className="mb-2 text-sm font-semibold text-fg">{formatWeekdayLabel(day)}</h3>
       {tasks.length === 0 ? (
-        <p className="text-xs text-muted">Nothing scheduled</p>
+        <p className="text-xs text-muted">🌤️ Nothing scheduled</p>
       ) : (
         <ul className="space-y-1">
           {tasks.map((task) => (

@@ -31,8 +31,8 @@ function LoginForm() {
   return (
     <div className="flex h-screen items-center justify-center text-fg">
       <div className="w-full max-w-sm px-6">
-        <h1 className="mb-1 text-lg font-semibold">Nodability</h1>
-        <p className="mb-6 text-sm text-muted">Sign in with a magic link.</p>
+        <h1 className="mb-1 text-lg font-semibold">📝 Nodability</h1>
+        <p className="mb-6 text-sm text-muted">Sign in with a magic link. ✨</p>
 
         {callbackError ? (
           <p className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -42,7 +42,7 @@ function LoginForm() {
 
         {status === "sent" ? (
           <p className="text-sm text-fg">
-            Check <span className="font-medium">{email}</span> for a sign-in link.
+            📬 Check <span className="font-medium">{email}</span> for a sign-in link.
           </p>
         ) : (
           <>

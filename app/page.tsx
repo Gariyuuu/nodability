@@ -17,24 +17,24 @@ export default function Home() {
   return (
     <div className="flex h-screen flex-col text-fg">
       <header className="flex items-center justify-between border-b border-border px-6 py-4">
-        <h1 className="text-lg font-semibold">Nodability</h1>
+        <h1 className="text-lg font-semibold">📝 Nodability</h1>
         <div className="flex items-center gap-4">
           <Link href="/ideas" className="text-sm text-muted hover:text-fg">
-            Ideas
+            💡 Ideas
           </Link>
           <Link href="/week" className="text-sm text-muted hover:text-fg">
-            Calendar →
+            📅 Calendar →
           </Link>
           <Link href="/changelog" className="text-sm text-muted hover:text-fg">
-            What&apos;s new
+            🎉 What&apos;s new
           </Link>
           <Link href="/templates" className="text-sm text-muted hover:text-fg">
-            Templates
+            🧩 Templates
           </Link>
           <ThemeToggle />
           <form action={signOutAction}>
             <button type="submit" className="text-sm text-muted hover:text-fg">
-              Sign out
+              👋 Sign out
             </button>
           </form>
         </div>

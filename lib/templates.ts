@@ -6,6 +6,7 @@ export interface TemplateTask {
 export interface StarterTemplate {
   id: string;
   name: string;
+  emoji: string;
   description: string;
   tasks: TemplateTask[];
 }
@@ -14,6 +15,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
   {
     id: "student",
     name: "Student",
+    emoji: "🎓",
     description: "Classes, assignments, and extracurriculars.",
     tasks: [
       { title: "Add your class schedule", category: "Classes" },
@@ -24,6 +26,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
   {
     id: "work",
     name: "Work",
+    emoji: "💼",
     description: "Meetings, deep work, and admin.",
     tasks: [
       { title: "Block time for deep work", category: "Deep Work" },
@@ -34,6 +37,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
   {
     id: "home",
     name: "Home & Life",
+    emoji: "🏡",
     description: "Chores, errands, and health.",
     tasks: [
       { title: "Plan groceries for the week", category: "Errands" },

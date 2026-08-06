@@ -9,6 +9,28 @@ export interface ChangelogEntry {
 // mentioning. Newest first.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.7",
+    date: "2026-08-06",
+    title: "10 themes, custom AI personalities, and a livelier look",
+    notes: [
+      "6 new color palettes — Rose, Mint, Lavender, Amber, Midnight, and Coral join the original 4, for 10 total",
+      "Meet the crew: pick who you chat with — Nodo 🌱, Rex 🐺, Sage 🧘, Turbo ⚡, or Professor Hoot 🦦 — each with a different personality",
+      "More emoji and personality sprinkled throughout the app so it feels less like a spreadsheet",
+    ],
+  },
+  {
+    version: "0.6",
+    date: "2026-08-06",
+    title: "Real photo backgrounds, calendar views, and quick-start templates",
+    notes: [
+      "Theme backgrounds are now real photography instead of flat gradients",
+      "New Month and Year calendar views alongside the original Week view",
+      "Tag categories as Academic, Personal, Work, or Other to color-code and filter your calendar",
+      "Templates moved to their own page with a full preview of what each one adds",
+      "The chat now suggests a few starter questions instead of a blank box",
+    ],
+  },
+  {
     version: "0.5",
     date: "2026-08-05",
     title: "Themes, templates, and a friendlier chat",

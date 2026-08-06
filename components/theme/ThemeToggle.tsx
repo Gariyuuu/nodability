@@ -25,7 +25,7 @@ export default function ThemeToggle() {
         🎨
       </button>
       {open ? (
-        <div className="absolute right-0 z-10 mt-2 w-56 rounded-lg border border-border bg-surface p-3 shadow-lg">
+        <div className="absolute right-0 z-10 mt-2 w-72 rounded-lg border border-border bg-surface p-3 shadow-lg">
           <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Mode</p>
           <div className="mb-3 flex gap-1">
             {MODES.map((m) => (
@@ -40,8 +40,10 @@ export default function ThemeToggle() {
               </button>
             ))}
           </div>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Palette</p>
-          <div className="grid grid-cols-2 gap-2">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">
+            Palette ({PALETTES.length})
+          </p>
+          <div className="grid grid-cols-3 gap-2">
             {PALETTES.map((p) => (
               <button
                 key={p.id}
