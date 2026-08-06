@@ -4,9 +4,11 @@ Active execution queue. IDs are stable — reference them in commits/`SESSION_LO
 
 ## Current task
 
-**None.** Every tracked task is complete as of commit `18200e7`. See "Recently completed"
-below for what was done. The only open item in the whole repo is `ISSUE-006`
-(deliberately-deferred `npm audit` findings) under "Deferred" — not an active task.
+**None.** The 10-themes / AI-personalities / liveliness feature request is complete as of
+commit `eb3c34a` (**not yet pushed** — ask before pushing). Everything through `720e9a2` is
+pushed. See "Recently completed" below for what was done. The only open item in the whole
+repo is `ISSUE-006` (deliberately-deferred `npm audit` findings) under "Deferred" — not an
+active task.
 
 ## Next up
 
@@ -69,7 +71,23 @@ section as new work happens.
 
 ## Recently completed
 
-1. **Fixed every open bug/tech-debt item in one session** — commit `18200e7`:
+1. **10 themes total, custom AI personalities, and a liveliness pass** — commit `eb3c34a`
+   (not yet pushed):
+   - Added 6 new theme palettes (Rose, Mint, Lavender, Amber, Midnight, Coral), each with a
+     self-hosted photo background (`public/theme/*.jpg`, sourced/verified the same way as
+     the original 4) and full light/dark token set in `app/globals.css`. 10 palettes total.
+   - Built a multi-personality AI chat system: `lib/personalities.ts` defines 5 characters
+     (Nodo, Rex, Sage, Turbo, Professor Hoot); `lib/prompts.ts` refactored into a shared
+     `buildSystemPrompt(personality)` so behavioral/grounding rules stay identical across
+     all of them; `/api/chat` accepts `personalityId`; `ChatPanel.tsx` got a picker UI
+     persisted to `localStorage`.
+   - Liveliness/emoji pass across nav links, headers, empty/loading states, template cards,
+     calendar tabs, and a completed-task celebration emoji.
+   - Backfilled a missing v0.6 in-app changelog entry (previous session's calendar/
+     real-photos work had shipped without one) and added v0.7 for this session.
+   - Verified: `tsc`/`lint`/`build` all exit 0; deployed; live curl on all 10 `/theme/*.jpg`
+     paths + Playwright screenshots of 3 new palettes confirming legibility.
+2. **Fixed every open bug/tech-debt item in one session** — commit `18200e7`:
    - `BUG-001` — all 9 `npm run lint` errors fixed (`npm run lint` now exits 0). Real
      structural fix for `ThemeProvider.tsx` (lazy `useState` initializers replacing an
      effect); justified `eslint-disable-next-line` for the 3 fetch-on-mount cases; fixed

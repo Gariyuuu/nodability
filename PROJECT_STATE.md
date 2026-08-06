@@ -3,77 +3,68 @@
 **This file describes the exact state of the repository at the moment of the last update. It
 is meant to let a new session resume from precisely this point.**
 
-- **Last updated:** 2026-08-06 — a follow-up session that fixed every open item from the
-  documentation audit (`BUG-001`, `BUG-002`, `TODO-001` through `TODO-007`).
+- **Last updated:** 2026-08-06 — a feature session that added 6 new theme palettes (10 total),
+  a multi-personality AI chat system, and a liveliness/emoji pass across the UI.
 - **Current branch:** `main`
-- **Latest commit:** `18200e7` — "Fix all tracked bugs/tech-debt: lint errors, chat error
-  handling, and more". Previous commits: `d92a96b` (doc-sync follow-up), `071f6a3`
-  (documentation/memory system), `6b55515` (real photo backgrounds, calendar views, templates
-  page, chat suggestions).
-- **Working tree: clean** (Verified via `git status` immediately after the commit).
-- **Not pushed.** `main` is ahead of `origin/main` by 3 commits (`071f6a3`, `d92a96b`,
-  `18200e7`) — commits have been made as instructed; nothing has been pushed since no push was
-  instructed. Push whenever appropriate.
-- **Deployed to production.** `vercel --prod --yes` was run after `18200e7`; live smoke tests
-  (curl + a Playwright screenshot of `/login`) confirm the deployment matches the commit.
+- **Latest commit:** `eb3c34a` — "Add 10 themes total, custom AI personalities, and a
+  livelier UI". Previous commits: `720e9a2` (doc updates), `18200e7` (bug/tech-debt fix pass),
+  `d92a96b` (doc-sync), `071f6a3` (documentation/memory system), `6b55515` (calendar views,
+  real photo backgrounds, templates page, chat suggestions).
+- **Working tree: clean** (Verified via `git status` after the commit).
+- **Pushed:** `720e9a2` and everything before it were pushed earlier (the user explicitly
+  asked to push, and `git push origin main` was run and confirmed). **This session's new
+  commit, `eb3c34a`, has not been pushed yet** — ask before pushing, per this repo's
+  git-safety rules. Verify current push status with `git status`/`git log` rather than
+  trusting this note, since it can go stale the moment a new commit is made.
+- **Deployed to production.** `vercel --prod --yes` was run after `eb3c34a`; live smoke tests
+  (curl on all 10 `/theme/*.jpg` paths, `/login`, and protected-route gating) plus Playwright
+  screenshots of 3 of the 6 new palettes on the live `/login` page confirm the deployment
+  matches the commit.
 - **Uncommitted files:** None. **Untracked files:** None.
 
 ## Active development objective
 
-None. Every tracked task is complete:
-- `DOC-001` (documentation/memory system) — done, commit `071f6a3` + `d92a96b`.
-- `BUG-001` (9 ESLint errors) — done, commit `18200e7`. `npm run lint` now exits 0.
-- `BUG-002` (`/api/chat` error handling) — done, commit `18200e7`.
-- `TODO-001` through `TODO-007` — done, commit `18200e7`. See `CLAUDE.md`'s Known Issues
-  section (ISSUE-001 through ISSUE-005, all marked Resolved/Improved) for exactly what
-  changed in each.
-
-The only remaining open item is **ISSUE-006** (3 of 4 `npm audit` advisories, deliberately
-deferred — fixing them requires bumping `next` past the pinned `16.2.11`, which needs its own
-dedicated review pass, not a drive-by fix). This is not a "next task to do now," it's a
-recorded, intentional deferral.
+None. The feature request ("improve Nodo, make the site livelier with more emoji, expand
+from 4 themes to 10, add custom AI personalities with Nodo as just one of them, and add a
+patch note") is complete:
+- **10 themes total:** added Rose, Mint, Lavender, Amber, Midnight, Coral (each with a
+  self-hosted photo background + full light/dark token set) alongside the original Slate,
+  Ocean, Sunset, Forest.
+- **Custom AI personalities:** `lib/personalities.ts` defines 5 selectable characters —
+  Nodo 🌱 (original, warm/encouraging), Rex 🐺 (tough-love hype coach), Sage 🧘 (calm/unbothered),
+  Turbo ⚡ (maximum hype), Professor Hoot 🦦 (nerdy/dad-joke). `lib/prompts.ts` was refactored
+  so the grounding/behavior rules (date reasoning, "Actions just taken" trust, etc.) stay
+  identical across every personality — only tone/voice varies. Picked via a new dropdown in
+  `ChatPanel.tsx`'s header, persisted to `localStorage` (`nodability-personality`) the same
+  way theme choice is.
+- **Liveliness pass:** emoji added across nav links, page headers, empty/loading states,
+  template cards, calendar view tabs, and a small celebration emoji on completed tasks.
+- **Patch notes:** `lib/changelog.ts` got a new v0.7 entry for this work, plus a backfilled
+  v0.6 entry for the previous session's calendar/real-photos/templates-page work (which had
+  shipped without an in-app changelog entry — caught and fixed while doing this one).
 
 ## Last completed task
 
-A single follow-up session (commit `18200e7`) that fixed every open bug/tech-debt item found
-during the earlier documentation audit, in one pass:
-
-1. **`BUG-001`** — Fixed all 9 ESLint errors. `components/theme/ThemeProvider.tsx` got a real
-   structural fix (guarded lazy `useState` initializers instead of an effect, eliminating the
-   extra post-mount render entirely). The 3 fetch-on-mount cases
-   (`app/ideas/page.tsx`, `app/week/page.tsx`, `components/TaskBoard.tsx`) got a justified
-   `eslint-disable-next-line` each (standard, correct pattern; the lint rule is stricter than
-   warranted, and a full Suspense/SWR migration was judged disproportionate). Fixed the
-   unescaped apostrophe in `components/ChatPanel.tsx`. Replaced 4 `: any` casts in
-   `lib/tasks.ts` with two real interfaces matching the actual Supabase query shapes.
-2. **`BUG-002`** — `app/api/chat/route.ts`'s body is now wrapped in try/catch, returning a
-   clean `500` on failure instead of an unhandled error; `components/ChatPanel.tsx` now checks
-   `res.ok` before reading the response as a stream.
-3. **`TODO-002`** — Template application is now idempotent (`lib/tasks.ts:taskExistsWithTitle`
-   checks before each insert in `app/api/templates/route.ts`).
-4. **`TODO-004`** — Removed the unused `is_recall_query` field from `lib/categorize.ts`'s
-   extraction schema and `lib/prompts.ts`'s instructions.
-5. **`TODO-005`/`TODO-006`** — Deleted the 5 unused Create-Next-App scaffold SVGs and the
-   superseded `app/favicon.ico`.
-6. **`TODO-003`** — Self-hosted the 4 theme background photos at `public/theme/*.jpg` instead
-   of hotlinking Unsplash (with `public/theme/SOURCES.md` recording provenance). **This
-   surfaced a new bug in the same session:** `proxy.ts`'s auth-gate matcher didn't exclude
-   `/theme/*`, so the new images 307-redirected to `/login` for logged-out visitors — same
-   class of bug as the earlier `/icon` issue. Fixed by broadening the matcher to exclude any
-   path ending in a common static-asset extension, rather than enumerating paths one at a
-   time.
-7. **`TODO-001`** — Made life-area grouping more discoverable: a visible hint line plus a
-   larger, bordered dot instead of an unlabeled one. (Improvement, not a guarantee of
-   adoption — re-check live `group_name` values in a future session.)
-8. **`TODO-007`** — Ran `npm audit fix` (no `--force`), resolving the `brace-expansion`
-   advisory. Left the other 3 (`postcss`/`sharp` via `next`) deliberately unresolved (see
-   ISSUE-006 above).
+The theme/personality/liveliness feature request above, commit `eb3c34a`. Key implementation
+details for a future session:
+- New palettes follow the exact same pattern as the original 4 (see `app/globals.css`'s
+  `--bg-art` blocks and `public/theme/SOURCES.md` for photo provenance) — copy that pattern
+  for an 11th palette if one is ever added.
+- The personality system's extraction step (Haiku, `lib/categorize.ts`) is **unaffected** —
+  extraction stays personality-neutral by design; only the Sonnet reply persona
+  (`lib/prompts.ts:buildSystemPrompt`) varies. This was a deliberate choice to avoid any
+  personality voice affecting task-extraction accuracy.
+- `app/api/chat/route.ts` now reads `personalityId` from the request body and falls back to
+  the first personality (Nodo) if missing/invalid (`lib/personalities.ts:findPersonality`).
+- The extension-based `proxy.ts` matcher fix from the previous session (excluding
+  `.jpg`/`.png`/etc. broadly) meant the 6 new `/theme/*.jpg` paths worked immediately with
+  **no proxy changes needed this time** — confirmed via local + live curl checks before
+  considering the task done.
 
 All changes were verified (`npx tsc --noEmit`, `npm run lint`, `npm run build` all exit 0),
-committed, deployed via `vercel --prod --yes`, and smoke-tested live (curl status checks on
-`/login`, `/icon`, `/apple-icon`, all 4 `/theme/*.jpg` paths, protected routes, and `/api/tasks`;
-a Playwright screenshot confirming the self-hosted background renders correctly on the live
-`/login` page).
+committed, deployed via `vercel --prod --yes`, and smoke-tested live (curl on every new
+`/theme/*.jpg` path, `/login`, protected-route gating; Playwright screenshots of Rose/light,
+Midnight/dark, and Amber/dark on the live `/login` page confirming legibility).
 
 ## Current unfinished task
 
@@ -85,33 +76,30 @@ N/A — no task is unfinished.
 
 ## What has already been attempted (this session, informational)
 
-- All fixes were implemented, verified locally (`tsc`/`lint`/`build`), then deployed and
-  re-verified live — no fix was left "probably works" without a real check.
-- Deliberately did **not** run `npm audit fix --force` (would bump `next` past the pinned
-  version) — see ISSUE-006 in `CLAUDE.md`.
-- Deliberately did **not** attempt a structural rewrite of the 3 fetch-on-mount components to
-  avoid `react-hooks/set-state-in-effect` "properly" (e.g. via SWR/React Query/Suspense) —
-  judged disproportionate risk/effort for this app's scale given no test suite exists to catch
-  regressions from such a rewrite.
+- All 6 new background photos were sourced via live Unsplash search (WebFetch), verified
+  live with `curl` (200 + correct content-type) before committing to any of them, and
+  visually previewed before final download — same rigor as the original 4.
+- Deliberately kept the personality system's *behavioral* rules (grounding, date reasoning,
+  actions-log trust) identical across all 5 personas, varying only tone — extraction accuracy
+  must not depend on which character is selected.
 
 ## What currently works (Verified)
 
-- Production deployment at https://nodability.vercel.app is live and responding correctly,
-  post-fix: `/login` → 200, `/icon`/`/apple-icon`/all 4 `/theme/*.jpg` → 200 with correct
-  content types, protected routes → 307/401 as expected when logged out.
-- `npm run build`, `npx tsc --noEmit`, **and now `npm run lint`** all pass cleanly (exit 0).
-- Two real Supabase Auth accounts exist (the app owner's and their partner's) and have been
-  used to sign in successfully. Real email addresses are intentionally not recorded in this
-  repo's docs since it's pushed to a public GitHub remote.
-- Live production data exists and is being actively used: 19 tasks, 112 chat messages, 7
-  ideas, 3 categories (as of the original audit — not re-queried after this session's changes
-  since none of them touch task/message/idea/category data itself).
+- Production deployment is live and correctly gated: `/login` → 200, all 10
+  `/theme/*.jpg` paths → 200 `image/jpeg`, protected routes → 307/401 when logged out.
+- `npm run build`, `npx tsc --noEmit`, and `npm run lint` all pass cleanly (exit 0).
+- The theme picker shows and applies all 10 palettes (visually confirmed for 3 of the 6 new
+  ones via live screenshot; the other 3 follow the identical code path so were not separately
+  screenshotted).
+- Two real Supabase Auth accounts exist and have been used to sign in successfully. Real
+  email addresses are intentionally not recorded in this repo's docs (public GitHub remote).
+- Live production data: 19 tasks, 112 chat messages, 7 ideas, 3 categories as of the original
+  audit — not re-queried this session since none of this session's changes touch that data.
 
 ## What currently fails / errors observed
 
-Nothing application-level. `npm audit` still reports 3 high-severity advisories (down from 4),
-all transitive build-tooling dependencies, deliberately unresolved — see ISSUE-006 in
-`CLAUDE.md`.
+Nothing application-level. `npm audit` still reports 3 high-severity advisories (deliberately
+deferred, see `ISSUE-006` in `CLAUDE.md`) — unchanged by this session.
 
 ## Blockers
 
@@ -119,45 +107,46 @@ None.
 
 ## Assumptions currently in use (Inferred, not stated anywhere explicitly)
 
-- The app is intended to remain a 2-person tool, not evolve toward public multi-tenant
-  signup — inferred from `shouldCreateUser: false` and the complete absence of any invite/
-  signup UI.
-- The developer treats `git push` + manual `vercel --prod --yes` as the deploy ritual — no
-  evidence of an intended future CI/CD automation exists in the repo (no `.github/workflows`,
-  no `vercel.json`).
-- No test framework is intended to be added imminently — inferred only from absence, not from
-  any explicit decision recorded anywhere.
+- Personality choice, like theme choice, is per-browser (`localStorage`), not per-account —
+  consistent with the existing theme-storage pattern and the app's lack of a `profiles`/
+  settings table. Switching devices resets which personality is selected.
+- The 5 personalities chosen (Nodo/Rex/Sage/Turbo/Professor Hoot) are a reasonable creative
+  default for "a few distinct, fun voices," not a user-specified exact list — the user's
+  request ("add custom ai personalities, nodo is just one of them") didn't name specific
+  personas, so this was a judgment call. Revisit naming/count if the user wants something
+  different.
+- The app is intended to remain a 2-person tool — inferred from `shouldCreateUser: false` and
+  the complete absence of any invite/signup UI.
+- No test framework is intended to be added imminently — inferred only from absence.
 
 ## Temporary decisions (things done for expedience, flagged as such at the time)
 
-- The `console.error` in `app/auth/callback/route.ts:15` and the new one in
-  `app/api/chat/route.ts`'s catch block are debug/observability leftovers, not part of a
-  structured logging strategy — acceptable at this app's scale but worth revisiting if
-  real monitoring is ever added.
-- The `eslint-disable-next-line react-hooks/set-state-in-effect` comments (3 of them) are a
-  documented, justified suppression rather than a structural rewrite — see `BUG-001` above
-  and `CLAUDE.md` ISSUE-001 for the reasoning. Revisit if this app ever adopts a proper
-  data-fetching library.
+- The `eslint-disable-next-line react-hooks/set-state-in-effect` comments (3 of them, from
+  the prior session) remain a documented, justified suppression rather than a structural
+  rewrite.
+- Personality voice differences are implemented as a single flavor-text string per
+  personality merged into a shared prompt template — not a fully independent prompt per
+  character — to guarantee the shared behavioral rules can't drift out of sync across
+  personas as new ones are added.
 
 ## Next recommended actions
 
-1. **Decide whether to `git push`** — 3 local commits are ahead of `origin/main`.
-2. **When there's bandwidth for a dedicated review pass:** consider `npm audit fix --force`
-   (bumps `next` to `16.3.0`) — test thoroughly first, since there's no automated test suite
-   to catch regressions (see `TESTING.md`).
-3. **Watch real usage of life-area grouping** (`TODO-001`'s discoverability fix) — check back
-   on `categories.group_name` values in a future session to see if the two real users actually
-   started using it.
-4. **Consider adding a minimal test suite** (see `TESTING.md`'s recommended starting point) —
-   this session made several small, judgment-call fixes (the eslint-disable justifications,
-   the idempotency check) that would benefit from regression coverage.
+1. **Ask before pushing** `eb3c34a` — everything through `720e9a2` is already pushed
+   (confirmed), this new commit is local-only.
+2. Consider whether the 5 personalities need adjusting (names, voices, count) — this was a
+   creative default, not a user-specified list.
+3. When there's bandwidth: the still-deferred `npm audit fix --force` (`ISSUE-006`) and a
+   minimal test suite (see `TESTING.md`) remain open from before this session.
+4. Watch real usage of life-area grouping (`TODO-001`'s discoverability fix, from a prior
+   session) — still unconfirmed whether it changed real adoption.
 
 ## Verification required before continuing
 
 - Run `git status` and `git log --oneline -3` at the start of any new session. Expect: clean
-  tree, `HEAD` at `18200e7`.
+  tree, `HEAD` at `eb3c34a`, `main` ahead of `origin/main` by 1 commit (unless it's been
+  pushed since this was written — always verify push status directly rather than trusting
+  this file, since it changes independently of code).
 - Re-run `npm run build`, `npx tsc --noEmit`, and `npm run lint` to confirm the "all pass"
-  status in this file is still accurate — don't assume it without checking.
-- If resuming much later, re-verify Supabase migration state
-  (`supabase/migrations/005_category_group.sql` should be the latest applied) and re-check the
-  live row counts, since real usage continues independent of code changes.
+  status in this file is still accurate.
+- If resuming much later, re-verify Supabase migration state and re-check live row counts,
+  since real usage continues independent of code changes.

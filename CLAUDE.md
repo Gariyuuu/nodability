@@ -77,19 +77,24 @@ run**. Verified via `node_modules/next/dist/docs/01-app/03-api-reference/03-file
 - **Current stable state:** Deployed and working. Build succeeds (`npm run build`, exit 0).
   TypeScript type-checks clean (`npx tsc --noEmit`, exit 0). **ESLint now passes cleanly too**
   (`npm run lint`, exit 0) — all 9 original errors were fixed, see [Known issues](#known-issues).
-- **Latest completed milestone:** A follow-up session fixed every tracked bug/tech-debt item
-  from the documentation audit in one pass (commit `18200e7`): all 9 lint errors, `/api/chat`
-  error handling, template re-application duplicating tasks, the unused `is_recall_query`
-  field, unused scaffold assets, self-hosted theme background photos (was hotlinked from
-  Unsplash), improved life-area-grouping discoverability, and the safe half of the `npm audit`
-  findings. Before that: a large feature pass adding real per-user authentication, theming (4
-  palettes × light/dark), a Week/Month/Year calendar with Academic/Personal/Work/Other
-  grouping, a starter-templates page, a changelog page, and chat suggestion chips. See
-  `git log` and [CHANGELOG.md](CHANGELOG.md) for the full commit-by-commit history.
+- **Latest completed milestone:** A feature session (commit `eb3c34a`, **not yet pushed**)
+  expanded theming from 4 to **10 palettes** (Slate, Ocean, Sunset, Forest, Rose, Mint,
+  Lavender, Amber, Midnight, Coral), built a **multi-personality AI chat system** (Nodo is
+  now one of 5 selectable characters — see [FEATURES.md](FEATURES.md)), and did a
+  liveliness/emoji pass across the UI. Before that: a follow-up session fixed every tracked
+  bug/tech-debt item from the documentation audit in one pass (commit `18200e7`): all 9 lint
+  errors, `/api/chat` error handling, template re-application duplicating tasks, the unused
+  `is_recall_query` field, unused scaffold assets, self-hosted theme background photos (was
+  hotlinked from Unsplash), improved life-area-grouping discoverability, and the safe half of
+  the `npm audit` findings. Before that: a large feature pass adding real per-user
+  authentication, a Week/Month/Year calendar with Academic/Personal/Work/Other grouping, a
+  starter-templates page, a changelog page, and chat suggestion chips. See `git log` and
+  [CHANGELOG.md](CHANGELOG.md) for the full commit-by-commit history.
 - **Current active task:** None. Every tracked task (`DOC-001`, `BUG-001`, `BUG-002`,
-  `TODO-001` through `TODO-007`) is complete. See [PROJECT_STATE.md](PROJECT_STATE.md) for the
-  exact stopping point and [TASKS.md](TASKS.md) for what's left (only the deliberately-deferred
-  `next` version bump, ISSUE-006).
+  `TODO-001` through `TODO-007`, and the 10-themes/personalities/liveliness request) is
+  complete. See [PROJECT_STATE.md](PROJECT_STATE.md) for the exact stopping point and
+  [TASKS.md](TASKS.md) for what's left (only the deliberately-deferred `next` version bump,
+  ISSUE-006). **`eb3c34a` has not been pushed** — ask before pushing.
 - **Highest-priority next task:** None urgent. The only open item is ISSUE-006 (3 remaining
   `npm audit` advisories requiring a `next` version bump past the pinned range) — deliberately
   deferred, not a "next task to just do."
@@ -187,7 +192,8 @@ lib/
   tasks.ts, ideas.ts, messages.ts   All DB reads/writes, every function takes userId first
   categorize.ts            Haiku tool-use call that extracts structured tasks from a message
   anthropic.ts             Anthropic client + model name constants
-  prompts.ts               System prompts (chat persona "Nodo" + extraction instructions)
+  prompts.ts               buildSystemPrompt(personality) + shared rules + extraction instructions
+  personalities.ts          5 selectable AI chat characters (Nodo, Rex, Sage, Turbo, Professor Hoot)
   calendar.ts               Month-grid / year-grid date math
   week.ts                   Week-day date math + taskFallsOnDay
   groups.ts                 Academic/Personal/Work/Other colors, labels, cycle order
@@ -286,15 +292,16 @@ Full detail in [UI_SYSTEM.md](UI_SYSTEM.md). Key facts every session should know
   utilities via an `@theme inline` block (`--color-bg`, `--color-fg`, etc. → `bg-bg`,
   `text-fg`, ...). There is **no `tailwind.config.js`** — Tailwind v4's CSS-first config is
   used exclusively.
-- **4 palettes:** Slate, Ocean, Sunset, Forest — each with a light and dark variant (8 total
-  variable blocks in `globals.css`). Palette + mode are chosen via `components/theme/ThemeToggle.tsx`
-  and persisted to `localStorage` (`lib/theme.ts` constants `THEME_STORAGE_KEY` /
-  `PALETTE_STORAGE_KEY`).
-- **Backgrounds are real photos, self-hosted** at `public/theme/{slate,ocean,sunset,forest}.jpg`
-  (one per palette, same photo for light/dark, darkened/lightened via a CSS scrim gradient
-  layered on top). Originally sourced from Unsplash and hotlinked directly from
-  `images.unsplash.com` — downloaded and self-hosted instead as of commit `18200e7` for
-  durability (see `public/theme/SOURCES.md` for original photo IDs/license).
+- **10 palettes:** Slate, Ocean, Sunset, Forest, Rose, Mint, Lavender, Amber, Midnight, Coral
+  — each with a light and dark variant (20 total variable blocks in `globals.css`). Palette +
+  mode are chosen via `components/theme/ThemeToggle.tsx` and persisted to `localStorage`
+  (`lib/theme.ts` constants `THEME_STORAGE_KEY` / `PALETTE_STORAGE_KEY`).
+- **Backgrounds are real photos, self-hosted** at `public/theme/<name>.jpg` (one per palette,
+  same photo for light/dark, darkened/lightened via a CSS scrim gradient layered on top).
+  Originally sourced from Unsplash and hotlinked directly from `images.unsplash.com` for the
+  first 4 — downloaded and self-hosted for durability starting at commit `18200e7`; the 6
+  newer palettes (commit `eb3c34a`) were self-hosted from the start (see
+  `public/theme/SOURCES.md` for all 10 original photo IDs/license).
 - **No-flash-of-wrong-theme script:** an inline `<script>` in `app/layout.tsx`'s `<head>`
   (string built in `lib/theme.ts` as `NO_FLASH_SCRIPT`) reads `localStorage` and sets
   `data-theme`/`data-palette` on `<html>` before first paint. Removing this reintroduces a

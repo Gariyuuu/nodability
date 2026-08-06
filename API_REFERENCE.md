@@ -119,11 +119,15 @@ inconsistency is worth normalizing if you touch this route.
   message via Haiku, applies them, then streams a Sonnet-generated reply.
 - **Auth:** Required (401 returns **plain text** `"unauthorized"`, not JSON — see the note at
   the top of this file).
-- **Request body:** `{ "message": "string" }`
+- **Request body:** `{ "message": "string", "personalityId"?: "string" }` — `personalityId`
+  selects which AI character replies (see `lib/personalities.ts`: `"nodo"` (default) |
+  `"rex"` | `"sage"` | `"turbo"` | `"prof"`). Optional — falls back to `"nodo"` if missing,
+  not a string, or an unrecognized ID (`findPersonality` never rejects, just defaults).
 - **Response 200:** `Content-Type: text/plain; charset=utf-8`, a streamed chunked response —
   the raw assistant reply text, not JSON, not SSE-framed.
 - **Validation:** `new Response("message is required", { status: 400 })` (plain text, not
-  JSON) if `message` is missing or not a string.
+  JSON) if `message` is missing or not a string. Invalid JSON body → 400
+  `"invalid JSON body"`.
 - **Side effects/DB:**
   - Reads: `listCategories(userId)`, `listRecentMessages(userId, 20)`, `listTasks(userId)`.
   - Writes (per extracted task): `getOrCreateCategory` + `insertTask`.
@@ -144,7 +148,7 @@ inconsistency is worth normalizing if you touch this route.
   POST /api/chat
   Content-Type: application/json
 
-  { "message": "Chem lab report due Friday at 5pm" }
+  { "message": "Chem lab report due Friday at 5pm", "personalityId": "rex" }
   ```
 - **Example response (streamed plain text, illustrative only):**
   ```

@@ -170,3 +170,47 @@ reasoning directly). No developer was interviewed to produce this file — do no
 - **Affected files:** Entire repo (absence of `*.test.*` files, no test script in
   `package.json`).
 - **Verification status:** Inferred (the absence is Verified; the reasoning is Unknown).
+
+---
+
+### DEC-009 — Personality system: shared behavioral rules, per-persona voice only
+- **Date:** 2026-08-06 (commit `eb3c34a`)
+- **Status:** Accepted, in effect
+- **Context:** The user asked for multiple selectable AI chat personalities (Nodo becomes
+  just one of several), not a single fixed assistant.
+- **Decision:** `lib/prompts.ts` keeps one shared `CORE_RULES` block (grounding, date
+  reasoning, "Actions just taken" trust, etc.) and merges each personality's short `voice`
+  string from `lib/personalities.ts` into a single template (`buildSystemPrompt`), rather
+  than writing 5 fully independent system prompts.
+- **Reasoning:** Verified — explicit design goal during implementation: extraction accuracy
+  and confirmation correctness must not vary by which character is selected, only tone
+  should. Independent per-personality prompts would risk the grounding rules drifting out of
+  sync as more personalities are added later.
+- **Alternatives considered:** Fully independent prompt per personality (more creative
+  flexibility per character, but risks behavioral drift and duplicated maintenance across 5+
+  prompts). Rejected in favor of the shared-rules approach.
+- **Consequences:** Adding a 6th personality only requires a `voice` string + metadata in
+  `lib/personalities.ts` — the behavioral contract is inherited automatically. A downside:
+  personality voice is necessarily lighter-touch (one paragraph of flavor) rather than a
+  deeply distinct prompt structure per character.
+- **Affected files:** `lib/prompts.ts`, `lib/personalities.ts`, `app/api/chat/route.ts`.
+- **Verification status:** Verified.
+
+---
+
+### DEC-010 — Personality and theme choice both live in `localStorage`, not per-account
+- **Date:** 2026-08-06 (commit `eb3c34a`)
+- **Status:** Accepted, in effect
+- **Context:** Needed somewhere to persist which AI personality a user picked, across page
+  reloads.
+- **Decision:** Reuse the exact pattern already established for theme choice — a
+  `localStorage` key (`nodability-personality`) read via component state, no database
+  column, no `profiles` table involved.
+- **Reasoning:** Inferred — consistency with the existing theme-storage pattern was
+  preferred over introducing a new persistence mechanism (a `profiles` table) for a second,
+  similarly low-stakes preference.
+- **Consequences:** Personality choice, like theme, is per-browser — switching devices
+  resets it to the default (Nodo). If this app ever gains a `profiles` table for other
+  reasons, both settings would be reasonable candidates to migrate there together.
+- **Affected files:** `components/ChatPanel.tsx`.
+- **Verification status:** Inferred.

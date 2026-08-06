@@ -8,15 +8,18 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
 
 ---
 
-## 1. Chat-driven task capture ("Nodo")
+## 1. Chat-driven task capture (multi-personality: Nodo, Rex, Sage, Turbo, Professor Hoot)
 
 - **Purpose:** Type a free-form message; the assistant extracts tasks/categories/deletions
-  and replies conversationally.
-- **User flow:** Open `/` → type in the chat panel or tap a suggestion chip → message streams
-  back → task board (`TaskBoard`) refreshes to show newly added/removed tasks.
+  and replies conversationally, in the voice of whichever AI personality is selected.
+- **User flow:** Open `/` → optionally click the personality name/avatar in the chat header to
+  pick a different character → type in the chat panel or tap a suggestion chip → message
+  streams back in that personality's voice → task board (`TaskBoard`) refreshes to show
+  newly added/removed tasks.
 - **Status: Verified complete**, with one known fragile edge case (see below).
-- **Frontend:** `components/ChatPanel.tsx`.
-- **Backend:** `app/api/chat/route.ts`, `lib/categorize.ts`, `lib/prompts.ts`.
+- **Frontend:** `components/ChatPanel.tsx` (includes the personality picker).
+- **Backend:** `app/api/chat/route.ts`, `lib/categorize.ts`, `lib/prompts.ts`,
+  `lib/personalities.ts`.
 - **Database:** `tasks`, `categories`, `messages` (all read/written).
 - **External integrations:** Anthropic Claude API (Haiku for extraction, Sonnet for reply).
 - **Environment variables:** `ANTHROPIC_API_KEY`.
@@ -37,8 +40,43 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
 - **Tests:** None.
 - **Known issues:** Mid-stream errors still skip persisting that turn to `messages` (an
   inherent limit of streaming — not addressed, low impact).
-- **Remaining work / future improvements:** Wrap the route body in try/catch; use or remove
-  the unused `is_recall_query` field; add basic rate limiting.
+- **Remaining work / future improvements:** Add basic rate limiting.
+
+---
+
+## 1b. AI personality system
+
+- **Purpose:** Let the user pick which AI character they're talking to, instead of a single
+  fixed assistant — Nodo is now one of 5 options.
+- **User flow:** Click the personality name/emoji at the top of the chat panel → a dropdown
+  lists all 5 characters with their emoji and tagline → click one → future replies (not past
+  chat bubbles) use that character's voice.
+- **Status: Verified complete.**
+- **Frontend:** `components/ChatPanel.tsx` (picker UI, `localStorage` persistence under key
+  `nodability-personality`, same pattern as theme storage).
+- **Backend:** `lib/personalities.ts` (5 character definitions: Nodo 🌱, Rex 🐺, Sage 🧘,
+  Turbo ⚡, Professor Hoot 🦦 — name/emoji/tagline/voice/greeting each), `lib/prompts.ts`
+  (`buildSystemPrompt(personality)` merges the personality's `voice` string into a shared
+  `CORE_RULES` block), `app/api/chat/route.ts` (reads `personalityId` from the request body,
+  resolves via `findPersonality`, falls back to Nodo if missing/invalid).
+- **Database:** None — personality choice is `localStorage`-only, not persisted server-side
+  (consistent with how theme choice works; there's no `profiles`/settings table in this
+  schema).
+- **Design constraint (deliberate):** The extraction step (Haiku, `lib/categorize.ts`) is
+  **personality-neutral** — only the Sonnet reply persona varies. This was a deliberate choice
+  so that switching characters can't affect task-extraction accuracy or the grounding/
+  confirmation rules (which live in `lib/prompts.ts`'s shared `CORE_RULES`, identical across
+  all 5 personas).
+- **Validation:** `app/api/chat/route.ts` only accepts `personalityId` if it's a string;
+  `findPersonality` falls back to the first personality (Nodo) for any unrecognized ID — no
+  allow-list rejection, just a safe default.
+- **Tests:** None.
+- **Known issues:** None found. The 5 personalities (names/voices/count) were a creative
+  default chosen during implementation, not a user-specified exact list — worth confirming
+  with the user whether they match what was wanted.
+- **Remaining work / future improvements:** Persisting personality choice server-side (would
+  need a `profiles` table, which doesn't exist); a way for the user to add/edit their own
+  custom personality beyond the fixed 5.
 
 ---
 
@@ -144,25 +182,28 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
 
 ---
 
-## 6. Theming (light/dark × 4 palettes + real photo backgrounds)
+## 6. Theming (light/dark × 10 palettes + real photo backgrounds)
 
 - **Purpose:** Let each of the two users pick a personal light/dark mode and color palette,
   with actual photographic backgrounds rather than a flat color.
-- **User flow:** Click the 🎨 icon in any header → pick Light/Dark/System and one of 4
-  palettes (Slate/Ocean/Sunset/Forest) → persisted per-browser via `localStorage` (not
-  per-account in the database — see note below).
-- **Status: Verified complete.**
+- **User flow:** Click the 🎨 icon in any header → pick Light/Dark/System and one of 10
+  palettes (Slate, Ocean, Sunset, Forest, Rose, Mint, Lavender, Amber, Midnight, Coral) →
+  persisted per-browser via `localStorage` (not per-account in the database — see note below).
+- **Status: Verified complete.** Grew from 4 to 10 palettes in commit `eb3c34a`; the last 6
+  were spot-checked (3 of 6) via live Playwright screenshots rather than all individually,
+  since they follow an identical code path to the original 4.
 - **Frontend:** `components/theme/{ThemeProvider,ThemeToggle}.tsx`, `lib/theme.ts`,
   `app/globals.css`, no-flash script wired in `app/layout.tsx`.
 - **Backend/DB:** None — this is a pure client-side/CSS feature. **Note:** theme choice is
   stored in `localStorage`, not in the `profiles`/user record (there is no `profiles` table
   at all in this schema) — so switching browsers/devices resets the theme choice. This is
   Inferred to be intentional given the app's small scope, not a bug.
-- **Assets:** Self-hosted photos at `public/theme/{slate,ocean,sunset,forest}.jpg` (originally
-  hotlinked from Unsplash — moved to self-hosted for durability, see `CLAUDE.md` ISSUE-004 and
-  `public/theme/SOURCES.md`).
-- **Tests:** Verified visually via ad hoc Playwright screenshots during development, both
-  before and after self-hosting the images — see `SESSION_LOG.md`.
+- **Assets:** Self-hosted photos at `public/theme/<name>.jpg`, one per palette (originally the
+  first 4 were hotlinked from Unsplash — moved to self-hosted for durability at commit
+  `18200e7`; the 6 newer palettes were self-hosted from the start). See `CLAUDE.md`
+  ISSUE-004 and `public/theme/SOURCES.md` for all 10 photo sources.
+- **Tests:** Verified visually via ad hoc Playwright screenshots during development, across
+  multiple sessions as palettes were added — see `SESSION_LOG.md`.
 - **Known issues:** None. (`ThemeProvider.tsx`'s lint error was fixed with a genuine
   structural change — lazy `useState` initializers instead of an effect — not a suppression.)
 

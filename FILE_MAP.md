@@ -77,14 +77,31 @@ Practical map of files a future coding agent is likely to touch. Trivial generat
   consumed in `app/api/chat/route.ts`.
 
 ## `lib/prompts.ts`
-- **Purpose:** All LLM system-prompt text — `EXTRACTION_INSTRUCTIONS` (Haiku) and
-  `NODABILITY_SYSTEM_PROMPT` (Sonnet, the "Nodo" persona).
-- **Called by:** `lib/categorize.ts`, `app/api/chat/route.ts`.
-- **Edit when:** changing the chat assistant's tone/personality, or extraction rules.
-- **Risk:** Medium. The extraction prompt encodes several precise, load-bearing behavioral
-  rules (date parsing, multi-day event handling, avoiding hallucinated confirmations) — read
-  it fully before editing; small wording changes can change extraction accuracy in subtle
-  ways with no test suite to catch regressions.
+- **Purpose:** All LLM system-prompt text — `EXTRACTION_INSTRUCTIONS` (Haiku, personality-
+  neutral) and `buildSystemPrompt(personality)` (Sonnet — merges a personality's `voice` from
+  `lib/personalities.ts` into the shared `CORE_RULES` block).
+- **Called by:** `lib/categorize.ts` (`EXTRACTION_INSTRUCTIONS`), `app/api/chat/route.ts`
+  (`buildSystemPrompt`).
+- **Edit when:** changing shared chat-assistant behavior/grounding rules (edit `CORE_RULES`
+  here) or extraction rules. To change tone/personality, edit `lib/personalities.ts` instead
+  — don't add personality-specific behavior logic here, only in the `voice` strings.
+- **Risk:** Medium-high. The extraction prompt and `CORE_RULES` encode several precise,
+  load-bearing behavioral rules (date parsing, multi-day event handling, avoiding
+  hallucinated confirmations) shared across **all 5 personalities** — read fully before
+  editing; a wording change here affects every character at once, with no test suite to catch
+  regressions.
+
+## `lib/personalities.ts`
+- **Purpose:** Defines the 5 selectable AI chat characters (Nodo, Rex, Sage, Turbo, Professor
+  Hoot) — each an `{id, name, emoji, tagline, voice, greeting}` record.
+- **Called by:** `components/ChatPanel.tsx` (picker UI, greeting text),
+  `app/api/chat/route.ts` (`findPersonality` resolves the request's `personalityId`),
+  `lib/prompts.ts` (`buildSystemPrompt` consumes `voice`).
+- **Edit when:** adding/removing/adjusting a personality. Adding one only requires a new
+  entry here — the shared behavioral rules in `lib/prompts.ts` apply automatically (see
+  `DECISIONS.md` DEC-009).
+- **Risk:** Low. Purely additive data; `findPersonality` always has a safe fallback (the
+  first entry, Nodo) for unrecognized IDs.
 
 ## `lib/anthropic.ts`
 - **Purpose:** Anthropic client instance + the two model-name constants

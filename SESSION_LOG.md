@@ -411,3 +411,151 @@ this file existed; dates are taken from `git log` where possible.
 - **Recommended next action:** Ask the user whether to push, and otherwise consider this
   handoff arc complete — the next real work item should come from the user's next request,
   not from this session's own backlog (which is now empty).
+
+---
+
+## Session: 2026-08-06 — Account-switch checkpoint pass (documentation only)
+
+- **Account/agent:** unknown (not to be inferred/invented)
+- **Goal:** Explicit instruction to run a final account-switch checkpoint pass: confirm/refresh
+  the existing 17-file documentation system against the *actual current* repo state, since time
+  had passed since the last update. Not a request to build new features or rebuild docs from
+  scratch, and not authorized to commit, push, deploy, reset, or discard anything.
+- **Files inspected:** `git status`, `git log --oneline -20`, `git diff --stat` (working tree
+  and staged), `git show --stat 720e9a2` + full diff, `git log origin/main`, `git rev-parse
+  HEAD origin/main`, `git remote -v` — to establish exact current git/push state. Read in full:
+  `PROJECT_STATE.md`, `TASKS.md`, `HANDOFF.md`, `CLAUDE.md`. Live `curl` checks against
+  `https://nodability.vercel.app/login` (200) and `/` (307, logged out) to confirm production
+  still matches what the docs claim. Grepped every `*.md` file for secret patterns (Anthropic/
+  Supabase/AWS key prefixes, JWT prefixes, PEM private-key headers) and for real personal email
+  addresses — none found.
+- **Files changed (documentation only, no application code):**
+  - `PROJECT_STATE.md` — corrected the stale "not pushed, 3 commits ahead of `origin/main`"
+    claim (it has since been pushed — `main` and `origin/main` are both at `720e9a2`); updated
+    "Latest commit" from `18200e7` to `720e9a2` (the doc-sync commit is now HEAD, and is itself
+    docs-only); updated the HEAD expectation in "Verification required"; struck through the
+    now-resolved "decide whether to push" recommended action.
+  - `HANDOFF.md` — same push-status correction; updated the "Which commands should I run
+    first?" HEAD expectation and the "Prompt for the next Claude Code account" block's expected
+    `git log` output from `18200e7` to `720e9a2`; updated "What should I do next?" to drop the
+    resolved push decision.
+  - `TASKS.md` — added a note to "Current task" cross-referencing that `720e9a2` (the doc-sync
+    commit documenting `18200e7`'s fixes) is also now pushed, so the task-completion framing
+    stays consistent with `PROJECT_STATE.md`/`HANDOFF.md`.
+  - This `SESSION_LOG.md` entry.
+  - **Not changed:** `CLAUDE.md` (no architecture/workflow/convention drift found — its content
+    was already accurate as of `720e9a2` and doesn't assert a specific current HEAD or push
+    status), `ARCHITECTURE.md`, `FILE_MAP.md`, `FEATURES.md`, `ROADMAP.md`, `DECISIONS.md`,
+    `DATABASE.md`, `API_REFERENCE.md`, `UI_SYSTEM.md`, `SECURITY.md`, `TESTING.md`,
+    `DEPLOYMENT.md`, `CHANGELOG.md` — spot-checked, nothing found that's now clearly wrong
+    given the current code (only the git-state fields in `PROJECT_STATE.md`/`HANDOFF.md`/
+    `TASKS.md` had drifted, not feature/architecture content).
+- **Commands run:** `git status`, `git branch --show-current`, `git log --oneline -20`,
+  `git diff --stat`, `git diff --cached --stat`, `git show --stat 720e9a2`, `git show 720e9a2`,
+  `git log --oneline origin/main -5`, `git rev-parse HEAD origin/main`, `git remote -v`,
+  `curl` against the live production URL, `grep` secret/email scans across all `*.md` files. No
+  build/lint/type-check re-run this session since no application code changed (verification
+  status already recorded accurately in `PROJECT_STATE.md` from the prior session).
+- **Tests run:** None (documentation-only pass; no code changed to test). Live production was
+  spot-checked via `curl`, not a full smoke-test pass.
+- **Results:** Working tree confirmed clean, no uncommitted/untracked files. `main` confirmed
+  pushed and in sync with `origin/main` (both at `720e9a2`) — this was the one material drift
+  from what the docs claimed. No secrets, tokens, passwords, or real email addresses found in
+  any documentation file. The "current task" (None / only `ISSUE-006` deferred) is described
+  consistently across `CLAUDE.md`, `PROJECT_STATE.md`, `TASKS.md`, and `HANDOFF.md` after this
+  pass.
+- **Decisions made:** None architectural. Corrected only what could be directly verified
+  against `git`/`curl` output; did not re-run a full feature-by-feature audit of the other 13
+  docs per the instruction to spot-check rather than re-audit.
+- **Problems found:** The push-status/HEAD-reference drift described above — the docs (written
+  when `main` was 3 commits ahead of `origin/main`) had not been updated after that push
+  happened out-of-band. No other drift, no undocumented application-code changes, no secrets.
+- **Work completed:** Checkpoint pass complete. No application behavior changed; nothing
+  committed, pushed, deployed, reset, or discarded by this session.
+- **Work remaining:** Nothing tracked as an active task — same as before this checkpoint.
+  `ISSUE-006` remains the one deliberately deferred item. This checkpoint's own edits have not
+  been committed (per instruction not to commit) — a future session/user should commit them
+  when ready.
+- **Recommended next action:** User should review and commit these documentation corrections
+  when convenient. Otherwise, this repo is ready for a clean account-switch handoff; the next
+  real work item should come from the user's next request.
+
+---
+
+## Session: 2026-08-06 — 10 themes, custom AI personalities, and a liveliness pass
+
+- **Account/agent:** unknown (not to be inferred/invented)
+- **Goal:** User feedback: "improve nodo and make more funny emojis just make the site more
+  lively its still kinda dead looking add a lot more themes there is four i want ten, and add
+  custom ai personalitites, nodo is just one of them, and patch note that for now." Broken
+  down: (1) expand from 4 theme palettes to 10; (2) build a multi-personality AI chat system
+  where Nodo is one of several selectable characters; (3) a general liveliness/emoji pass
+  across the UI; (4) add a patch-notes entry documenting this.
+- **Files inspected:** `lib/theme.ts`, `app/globals.css`, `components/theme/ThemeToggle.tsx`,
+  `lib/prompts.ts`, `components/ChatPanel.tsx`, `app/api/chat/route.ts`, `lib/templates.ts`,
+  `lib/changelog.ts`, and every page/component touched for the emoji pass.
+- **Files changed:**
+  - Added `lib/personalities.ts` (5 characters: Nodo, Rex, Sage, Turbo, Professor Hoot).
+  - Refactored `lib/prompts.ts`: extracted shared `CORE_RULES`, added
+    `buildSystemPrompt(personality)` replacing the old fixed `NODABILITY_SYSTEM_PROMPT`.
+  - `app/api/chat/route.ts`: reads `personalityId` from the request body, resolves via
+    `findPersonality`, uses `buildSystemPrompt(personality)`.
+  - `components/ChatPanel.tsx`: added a personality picker (localStorage-persisted, same
+    pattern as theme), dynamic avatar/name/tagline/greeting, emoji on suggestion chips and
+    the send button.
+  - `lib/theme.ts`: extended `Palette` type and `PALETTES` array with 6 new entries (rose,
+    mint, lavender, amber, midnight, coral).
+  - `app/globals.css`: added 12 new palette blocks (6 palettes × light/dark) following the
+    exact structure of the original 4.
+  - `components/theme/ThemeToggle.tsx`: widened the popover and switched the palette grid
+    from 2 to 3 columns to fit 10 options.
+  - Downloaded and added `public/theme/{rose,mint,lavender,amber,midnight,coral}.jpg`;
+    updated `public/theme/SOURCES.md` with the new attributions.
+  - `lib/templates.ts`: added an `emoji` field per template; `app/templates/page.tsx` uses it.
+  - Emoji pass: `app/page.tsx`, `app/ideas/page.tsx`, `app/week/page.tsx`,
+    `app/templates/page.tsx`, `app/changelog/page.tsx`, `app/login/page.tsx`,
+    `components/Sidebar.tsx`, `components/TaskBoard.tsx`,
+    `components/calendar/WeekView.tsx` — nav links, headers, empty/loading states, and a
+    completed-task celebration emoji.
+  - `lib/changelog.ts`: added v0.7 (this work) and backfilled a missing v0.6 entry for the
+    previous session's calendar/real-photos/templates-page work, which had shipped without
+    an in-app changelog entry.
+  - Updated `PROJECT_STATE.md`, `TASKS.md`, `HANDOFF.md` to reflect completion. This
+    `SESSION_LOG.md` entry.
+- **Commands run:** `WebFetch` against 6 live Unsplash search pages to source real photo
+  IDs; `curl` to verify each candidate returns 200 before downloading; downloaded previews
+  and did a visual check (via the Read tool on the image files) before committing to any
+  photo; `npx tsc --noEmit`, `npm run lint`, `npm run build` (all exit 0); local `npm run
+  dev` + `curl` to confirm the 6 new `/theme/*.jpg` paths weren't blocked by the auth gate
+  (they weren't — the prior session's extension-based `proxy.ts` fix already covered them);
+  `git add` (explicit file list) + `git commit`; `vercel --prod --yes`; live `curl` on all
+  10 theme image paths, `/login`, and protected-route gating; a Playwright script screenshotting
+  3 of the 6 new palettes (Rose/light, Midnight/dark, Amber/dark) against the live `/login`
+  page to visually confirm legibility.
+- **Tests run:** No automated tests exist. All verification was `tsc`/`lint`/`build` plus
+  manual local/live curl and screenshot checks, as above.
+- **Results:** All checks passed; live deployment confirmed serving all 10 theme images
+  correctly and gating protected routes as expected; screenshots confirmed good contrast/
+  legibility across the 3 spot-checked new palettes (soft pink, deep starry navy, and warm
+  amber sunset all read clearly against their text/button colors).
+- **Decisions made:**
+  - Kept the chat extraction step (Haiku, `lib/categorize.ts`) personality-neutral — only the
+    Sonnet reply persona varies. Explicit choice to avoid personality voice affecting
+    extraction accuracy.
+  - Chose 5 personalities and their specific names/voices/emoji as a creative default, since
+    the user's request didn't specify exact characters beyond "Nodo is just one of them" —
+    recorded in `PROJECT_STATE.md` as a judgment call the user may want to adjust.
+  - Personality selection persists the same way as theme (`localStorage`, per-browser, not
+    per-account) — consistency with the existing pattern rather than introducing a new
+    storage mechanism.
+- **Problems found:** None this session — the extension-based `proxy.ts` matcher fix from
+  the previous session's `/icon`/`/theme` bug meant the new theme images worked immediately
+  with no repeat of that issue.
+- **Work completed:** All 4 parts of the user's request, deployed and verified. Full detail
+  in `PROJECT_STATE.md` and `TASKS.md`'s "Recently completed" section.
+- **Work remaining:** Nothing tracked as an active task. The commit (`eb3c34a`) has **not**
+  been pushed — only committing was implied by this request, not pushing. Whether the 5
+  chosen personalities match what the user actually wants is unconfirmed (a creative default,
+  not a specified list).
+- **Recommended next action:** Ask the user whether to push `eb3c34a`, and whether the 5
+  personalities (names/voices) are to their taste or should be adjusted.
