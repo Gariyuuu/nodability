@@ -4,58 +4,32 @@ Active execution queue. IDs are stable — reference them in commits/`SESSION_LO
 
 ## Current task
 
-- **ID:** DOC-001
-- **Description:** Commit the 17-file documentation/memory system produced by the
-  2026-08-06 documentation-handoff audit (and reconfirmed by an account-switch checkpoint
-  the same day). No product/feature code is involved or was changed.
-- **Status:** Complete except for the actual `git commit` — deliberately left uncommitted
-  pending explicit user instruction, per this repo's git-safety rule ("never commit unless
-  explicitly asked").
-- **Priority:** High — not because it's urgent product work, but because uncommitted files
-  are fragile across a session/account switch (a `git checkout`, `git clean`, or careless
-  overwrite could lose them with no history to recover from).
-- **What has already been completed:**
-  - Full repository audit: every source file, config file, migration, the live Supabase
-    database (schema, row counts, auth users), the live Vercel deployment (route behavior,
-    env var scopes, project settings), and full git history.
-  - All 17 files written and internally cross-verified: `CLAUDE.md` (rewritten from an
-    `@AGENTS.md`-import stub into a full operating manual), `PROJECT_STATE.md`,
-    `ARCHITECTURE.md`, `FILE_MAP.md`, `FEATURES.md`, `TASKS.md` (this file), `ROADMAP.md`,
-    `DECISIONS.md`, `DATABASE.md`, `API_REFERENCE.md`, `UI_SYSTEM.md`, `SECURITY.md`,
-    `TESTING.md`, `DEPLOYMENT.md`, `CHANGELOG.md`, `SESSION_LOG.md`, `HANDOFF.md`.
-  - A self-verification pass caught and fixed two real inaccuracies before they could
-    mislead a future session: an overclaim that "every page is a Client Component" (false —
-    `app/changelog/page.tsx` is a Server Component) and an overclaim about `console.*` usage
-    (missed that `scripts/create-users.mjs` also logs to console, which is expected for a
-    CLI script but wasn't called out).
-  - A privacy check (broader than the literal "secrets" ask) found and redacted two real
-    personal email addresses that had been written into `DATABASE.md` and `PROJECT_STATE.md`
-    — this repo is pushed to a public GitHub remote, so real third-party email addresses
-    (specifically, the app owner's partner's) should not sit in it. Replaced with
-    non-identifying descriptions ("the app owner's account", "their partner's account").
-  - A second, lighter "account-switch checkpoint" pass (this update) re-verified git state,
-    checked for any secret/PII leakage across all 17 files, and confirmed the "current task"
-    description is now consistent across `CLAUDE.md`, `PROJECT_STATE.md`, `TASKS.md`, and
-    `HANDOFF.md`.
-- **What remains:** Nothing except the commit itself, which requires the user's explicit
-  go-ahead. If/when instructed, the recommended commit scope is all 17 files together (they
-  were produced as one coherent unit), with a message describing this as a documentation-only
-  change with no application behavior modified.
-- **Relevant files:** All 17 documentation files listed above. No application source,
-  config, or migration files are part of this task.
-- **Known errors:** None caused by this task (it made no application code changes). Pre-existing
-  errors discovered *while auditing* (not part of this task's own scope to fix) are tracked
-  separately as `BUG-001` and `BUG-002` below.
-- **Blockers:** None technical. The only "blocker" is procedural: this repo's rules require
-  explicit user instruction before committing, and that instruction has not yet been given.
-- **Acceptance criteria:** Either (a) all 17 files are committed in a single documentation
-  commit with a clear message and `git status` returns to clean, or (b) the user explicitly
-  decides not to commit yet and that decision is itself recorded (e.g. back in this file) so
-  a future session doesn't re-ask the same question from scratch.
-- **Validation steps:** After committing — `git status` shows a clean tree; `git show --stat
-  HEAD` lists exactly the 17 expected files; `npx tsc --noEmit` and `npm run build` still pass
-  (they're unaffected by `.md`-only changes, but re-run for certainty); confirm the commit was
-  **not** pushed unless the user separately asked for that too.
+**None.** `DOC-001` (below) is now complete. No product/feature task is in progress. The
+next task should be pulled from "Next up" below (`BUG-001` or `BUG-002`).
+
+## Recently completed (see also further down)
+
+- **DOC-001** — Create and commit a 17-file documentation/memory system for account-switch
+  handoff (produced by the 2026-08-06 documentation-handoff audit, refined by a follow-up
+  account-switch checkpoint the same day). No product/feature code was involved or changed.
+  - **Status: Done.** Committed as `071f6a3` — "Add permanent documentation/memory system for
+    account-switch handoff" — per explicit user instruction ("commit them all"). **Not
+    pushed** (not instructed to; local commit only, `main` is ahead of `origin/main` by 1
+    commit — a future session or the user can push whenever appropriate).
+  - **What was done:** Full repository audit (every source/config file, migration, live
+    Supabase state, live Vercel deployment, full git history); all 17 files written; a
+    self-verification pass caught and fixed two inaccuracies (an overclaim that every page is
+    a Client Component — `app/changelog/page.tsx` is actually a Server Component — and an
+    incomplete claim about `console.*` usage); a privacy check found and redacted two real
+    personal email addresses from `DATABASE.md`/`PROJECT_STATE.md` (this repo's GitHub remote
+    is public); all 17 files committed together in one commit as instructed.
+  - **Acceptance criteria met:** `git status` returned to clean immediately after the commit
+    (Verified); `git show --stat 071f6a3` lists exactly the 17 expected files.
+  - **Known errors:** None caused by this task. Pre-existing errors discovered *while
+    auditing* remain tracked separately as `BUG-001`/`BUG-002` below.
+  - **Validation performed:** `git status` clean; `git log --oneline -1` shows `071f6a3` as
+    `HEAD`; `npx tsc --noEmit` and `npm run build` remain unaffected (`.md`-only change, not
+    re-run again after the commit since nothing code-related changed).
 
 ## Next up
 

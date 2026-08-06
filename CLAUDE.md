@@ -83,11 +83,10 @@ run**. Verified via `node_modules/next/dist/docs/01-app/03-api-reference/03-file
   calendar with Academic/Personal/Work/Other grouping, a starter-templates page, a changelog
   page, and chat suggestion chips. See `git log` and [CHANGELOG.md](CHANGELOG.md) for the
   full commit-by-commit history.
-- **Current active task:** `DOC-001` (see [TASKS.md](TASKS.md)) — get an explicit decision
-  from the user on committing the 17 pending documentation files this audit produced, and
-  commit them if so instructed. No product/feature task is in progress. See
-  [PROJECT_STATE.md](PROJECT_STATE.md) for the exact stopping point.
-- **Highest-priority next *product* task (after `DOC-001` is resolved):** Fix the 9 ESLint
+- **Current active task:** None. `DOC-001` (see [TASKS.md](TASKS.md)) — committing this
+  documentation set — is complete (`071f6a3`, not yet pushed). No product/feature task is in
+  progress. See [PROJECT_STATE.md](PROJECT_STATE.md) for the exact stopping point.
+- **Highest-priority next task:** Fix the 9 ESLint
   errors (4× `react-hooks/set-state-in-effect`,
   1× `react/no-unescaped-entities`, 4× `@typescript-eslint/no-explicit-any`) — see
   [TASKS.md](TASKS.md) task `BUG-001`. None of these are believed to cause user-visible

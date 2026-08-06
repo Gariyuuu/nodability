@@ -293,3 +293,43 @@ this file existed; dates are taken from `git log` where possible.
   documentation files now?" Do not proceed to any other task while that question is
   unanswered, since leaving real work uncommitted across a session boundary is the single
   biggest risk this checkpoint identified.
+
+---
+
+## Session: 2026-08-06 — Commit the documentation set
+
+- **Account/agent:** unknown (not to be inferred/invented)
+- **Goal:** The user responded to the previous checkpoint's open question with an explicit
+  instruction: "commit them all." Commit the 17 pending documentation files and update the
+  docs' own "current task" language to reflect that `DOC-001` is now done.
+- **Files inspected:** `git status` (re-confirmed exactly the same 17 files were still
+  pending, nothing else had changed).
+- **Files changed (application code): none.** Files changed (documentation, to reflect
+  completion): `TASKS.md`, `PROJECT_STATE.md`, `HANDOFF.md`, `CLAUDE.md` — each updated to
+  change "commit pending" language to "committed as `071f6a3`," since leaving those files
+  saying a decision was still needed would itself become stale/inconsistent the moment the
+  commit happened. This `SESSION_LOG.md` entry.
+- **Commands run:** `git add` (17 files, listed explicitly by name, not `-A`), `git commit`
+  (message describing the documentation-only nature of the change and that no application
+  behavior changed), `git status`, `git log --oneline -3` to confirm the result.
+- **Tests run:** None — no application code changed, so build/lint/type-check were not
+  re-run after the commit (they were already verified passing/failing-as-expected in the
+  immediately preceding checkpoint session, and nothing code-related changed since).
+- **Results:** Commit `071f6a3` — "Add permanent documentation/memory system for
+  account-switch handoff" — created successfully on `main`, containing exactly the 17
+  expected files (`CLAUDE.md` modified, 16 new files added). `git status` returned to clean
+  immediately after. **Not pushed** — only a commit was instructed, not a push; `main` is
+  ahead of `origin/main` by 1 commit.
+- **Decisions made:** None architectural. Followed this repo's established git-safety
+  convention: staged files explicitly by name rather than `git add -A`, did not push without
+  separate instruction, used a heads-up co-authorship line consistent with this session's
+  other commits.
+- **Problems found:** None.
+- **Work completed:** `DOC-001` fully closed — documentation committed, and every file that
+  referenced it as "pending" (`CLAUDE.md`, `PROJECT_STATE.md`, `TASKS.md`, `HANDOFF.md`)
+  updated to reflect completion, keeping all four mutually consistent per this repo's own
+  consistency rule.
+- **Work remaining:** Whether to `git push` is still open — not done, since it wasn't
+  instructed. Beyond that, `BUG-001`/`BUG-002` remain the top of the product task queue.
+- **Recommended next action:** Ask the user whether to push `071f6a3` to `origin/main`, or
+  proceed directly to `BUG-001`/`BUG-002` if the user has other priorities in mind.

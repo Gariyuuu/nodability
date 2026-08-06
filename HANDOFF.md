@@ -5,14 +5,12 @@ history. This audit was performed 2026-08-06, and reconfirmed by a follow-up acc
 checkpoint the same day (no code changes in between — the checkpoint only tightened and
 re-verified the documentation itself).
 
-## ⚠️ First thing to check: this repo currently has uncommitted documentation files
+## Documentation set status: committed
 
-`git status` will show `CLAUDE.md` modified and 16 new `.md` files untracked. **This is
-expected** — it's the entire output of the documentation audit described in this file, not
-stray work from someone else. It has been deliberately left uncommitted because this repo's
-rules require explicit user instruction before committing (see `CLAUDE.md`'s git safety
-rules). **Ask the user whether to commit these 17 files before doing anything else** — see
-`TASKS.md`'s `DOC-001` for the full detail.
+The 17-file documentation/memory system (this file included) was committed as `071f6a3` —
+"Add permanent documentation/memory system for account-switch handoff" — per the user's
+explicit instruction ("commit them all"). The working tree should be clean. **Not pushed** —
+`main` is ahead of `origin/main` by 1 commit; push only if the user separately asks for it.
 
 ## What is this project?
 
@@ -33,23 +31,24 @@ In this order:
 
 ## What is the current task?
 
-**`DOC-001` in `TASKS.md`: get an explicit decision from the user on whether to commit the 17
-pending documentation files, and commit them if so.** No product/feature task is in progress.
-Once that's resolved, the next recommended *product* task is `BUG-001` (fix 9 `npm run lint`
-errors) or `BUG-002` (harden `/api/chat`'s error handling) — see `TASKS.md`.
+**None.** `DOC-001` (see `TASKS.md`) is complete and committed. No product/feature task is in
+progress. The next recommended task is `BUG-001` (fix 9 `npm run lint` errors) or `BUG-002`
+(harden `/api/chat`'s error handling) — see `TASKS.md`.
 
 ## What was the previous agent doing?
 
-Two back-to-back documentation sessions, no code changes in either: (1) the original
-documentation-handoff audit — created all 17 memory files listed in `CLAUDE.md`'s header;
-(2) a follow-up account-switch checkpoint (same day) that re-verified git state, fixed two
-inaccuracies caught during self-review (an overclaim that every page is a Client Component,
-and an incomplete claim about `console.*` usage), and — importantly — found and redacted two
+Three back-to-back documentation-only sessions, no application code changes in any of them:
+(1) the original documentation-handoff audit — created all 17 memory files listed in
+`CLAUDE.md`'s header; (2) a follow-up account-switch checkpoint (same day) that re-verified
+git state, fixed two inaccuracies caught during self-review (an overclaim that every page is
+a Client Component, and an incomplete claim about `console.*` usage), and found/redacted two
 real personal email addresses that had been written into `DATABASE.md`/`PROJECT_STATE.md`
-(this repo pushes to a public GitHub remote, so real third-party emails shouldn't sit in it).
-Before either of those, the previous *coding* session added real Unsplash photo theme
-backgrounds, Week/Month/Year calendar views, life-area grouping, a `/templates` page, and chat
-suggestion chips (commit `6b55515`). See `SESSION_LOG.md` for the full chronological history.
+(this repo pushes to a public GitHub remote, so real third-party emails shouldn't sit in it);
+(3) committing all 17 files as `071f6a3` per the user's explicit "commit them all" instruction,
+followed by updating the docs' own "current task" language to reflect that completion. Before
+any of those, the previous *coding* session added real Unsplash photo theme backgrounds,
+Week/Month/Year calendar views, life-area grouping, a `/templates` page, and chat suggestion
+chips (commit `6b55515`). See `SESSION_LOG.md` for the full chronological history.
 
 ## What works right now?
 
@@ -99,7 +98,7 @@ database — Preview deployments share the same production database, see `DEPLOY
 ## Which commands should I run first?
 
 ```bash
-git status                # expect: CLAUDE.md modified + 16 new .md files untracked, nothing else
+git status                # expect: clean, HEAD at 071f6a3
 npx tsc --noEmit          # should pass
 npm run build             # should pass
 npm run lint              # currently fails with 9 known errors — confirm you haven't added new ones
@@ -121,30 +120,28 @@ separate dev database to fall back to.
 Read CLAUDE.md, PROJECT_STATE.md, TASKS.md, and HANDOFF.md in full before doing anything else.
 
 Then:
-1. Run `git status` and `git log --oneline -10`. Expect: latest commit 6b55515, and CLAUDE.md
-   modified + 16 new .md files untracked (the pending documentation set — see DOC-001 in
-   TASKS.md). If you see anything beyond that, stop and reconcile before proceeding.
-2. Ask the user whether to commit the pending documentation files before doing anything else
-   — do not commit them yourself without that explicit go-ahead, and do not assume "make
-   progress" implies "commit this."
-3. Run `npx tsc --noEmit`, `npm run build`, and `npm run lint` to verify the documented
+1. Run `git status` and `git log --oneline -10`. Expect: a clean working tree, HEAD at
+   071f6a3 ("Add permanent documentation/memory system for account-switch handoff"). If you
+   see anything else (uncommitted files, a different HEAD), stop and reconcile before
+   proceeding — the docs may be describing a state that has since changed.
+2. Run `npx tsc --noEmit`, `npm run build`, and `npm run lint` to verify the documented
    pass/fail state is still accurate (build and type-check should pass; lint should fail
    with exactly the 9 errors described in CLAUDE.md's Known Issues section — if the count or
    nature of lint errors has changed, note that as stale documentation to fix).
-4. Summarize your understanding of the project back to the user in a few sentences before
+3. Summarize your understanding of the project back to the user in a few sentences before
    editing anything, so any misunderstanding surfaces immediately.
-5. Identify any contradictions between what these memory files claim and what you actually
+4. Identify any contradictions between what these memory files claim and what you actually
    observe in the current code/config/live systems — call them out explicitly rather than
    silently trusting or silently overriding the docs.
-6. Continue whatever task the user gives you without redoing the authentication, theming,
+5. Continue whatever task the user gives you without redoing the authentication, theming,
    calendar-views, or templates-page work already completed (see FEATURES.md for what's
    already done) — unless the user is specifically asking you to change one of those.
-7. Preserve the existing architecture (service-role client + manual userId filtering,
+6. Preserve the existing architecture (service-role client + manual userId filtering,
    magic-link-only auth, the semantic theme-token system, the forward-only manual-migration
    workflow) unless there's a strong, explicitly-discussed reason to change it — these are
    documented in DECISIONS.md along with why they were chosen.
-8. After completing any meaningful work, update PROJECT_STATE.md, TASKS.md, and
+7. After completing any meaningful work, update PROJECT_STATE.md, TASKS.md, and
    SESSION_LOG.md (append, don't overwrite), plus whichever feature/architecture/API/
    database/testing/deployment/security doc your change affects, per the "Permanent rules"
-   section at the bottom of CLAUDE.md.
+   section at the bottom of CLAUDE.md. Never commit or push without explicit instruction.
 ```
