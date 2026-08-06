@@ -3,7 +3,7 @@ import { CHANGELOG } from "@/lib/changelog";
 
 export default function ChangelogPage() {
   return (
-    <div className="flex h-screen flex-col bg-bg text-fg">
+    <div className="flex h-screen flex-col text-fg">
       <header className="flex items-center justify-between border-b border-border px-6 py-4">
         <h1 className="text-lg font-semibold">What&apos;s new</h1>
         <Link href="/" className="text-sm text-muted hover:text-fg">

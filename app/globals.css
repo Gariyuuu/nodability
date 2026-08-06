@@ -14,6 +14,10 @@
   --muted: #6b7280;
   --accent: #111827;
   --accent-fg: #ffffff;
+  --bg-art:
+    radial-gradient(ellipse 700px 500px at 8% -5%, rgba(100, 116, 139, 0.16), transparent 60%),
+    radial-gradient(ellipse 800px 600px at 105% 15%, rgba(148, 163, 184, 0.14), transparent 60%),
+    radial-gradient(ellipse 700px 700px at 50% 115%, rgba(71, 85, 105, 0.1), transparent 60%);
 }
 :root[data-palette="slate"][data-theme="dark"] {
   --bg: #0a0a0a;
@@ -23,6 +27,10 @@
   --muted: #9ca3af;
   --accent: #e5e7eb;
   --accent-fg: #111827;
+  --bg-art:
+    radial-gradient(ellipse 700px 500px at 8% -5%, rgba(148, 163, 184, 0.14), transparent 60%),
+    radial-gradient(ellipse 800px 600px at 105% 15%, rgba(100, 116, 139, 0.12), transparent 60%),
+    radial-gradient(ellipse 700px 700px at 50% 115%, rgba(71, 85, 105, 0.16), transparent 60%);
 }
 
 :root[data-palette="ocean"] {
@@ -33,6 +41,10 @@
   --muted: #5b7d8f;
   --accent: #0f7ea3;
   --accent-fg: #ffffff;
+  --bg-art:
+    radial-gradient(ellipse 750px 550px at 5% -5%, rgba(15, 126, 163, 0.18), transparent 60%),
+    radial-gradient(ellipse 800px 600px at 110% 10%, rgba(55, 182, 221, 0.16), transparent 60%),
+    radial-gradient(ellipse 800px 700px at 50% 120%, rgba(20, 100, 130, 0.12), transparent 60%);
 }
 :root[data-palette="ocean"][data-theme="dark"] {
   --bg: #071a24;
@@ -42,6 +54,10 @@
   --muted: #7fa4b3;
   --accent: #37b6dd;
   --accent-fg: #04222c;
+  --bg-art:
+    radial-gradient(ellipse 750px 550px at 5% -5%, rgba(55, 182, 221, 0.16), transparent 60%),
+    radial-gradient(ellipse 800px 600px at 110% 10%, rgba(15, 126, 163, 0.2), transparent 60%),
+    radial-gradient(ellipse 800px 700px at 50% 120%, rgba(10, 60, 80, 0.3), transparent 60%);
 }
 
 :root[data-palette="sunset"] {
@@ -52,6 +68,10 @@
   --muted: #9a6b52;
   --accent: #e2683b;
   --accent-fg: #ffffff;
+  --bg-art:
+    radial-gradient(ellipse 750px 550px at 8% -5%, rgba(226, 104, 59, 0.18), transparent 60%),
+    radial-gradient(ellipse 800px 600px at 105% 10%, rgba(255, 138, 92, 0.16), transparent 60%),
+    radial-gradient(ellipse 800px 700px at 50% 120%, rgba(199, 90, 140, 0.12), transparent 60%);
 }
 :root[data-palette="sunset"][data-theme="dark"] {
   --bg: #241109;
@@ -61,6 +81,10 @@
   --muted: #c99372;
   --accent: #ff8a5c;
   --accent-fg: #291005;
+  --bg-art:
+    radial-gradient(ellipse 750px 550px at 8% -5%, rgba(255, 138, 92, 0.18), transparent 60%),
+    radial-gradient(ellipse 800px 600px at 105% 10%, rgba(226, 104, 59, 0.16), transparent 60%),
+    radial-gradient(ellipse 800px 700px at 50% 120%, rgba(140, 50, 90, 0.22), transparent 60%);
 }
 
 :root[data-palette="forest"] {
@@ -71,6 +95,10 @@
   --muted: #5f7d66;
   --accent: #2f7d4f;
   --accent-fg: #ffffff;
+  --bg-art:
+    radial-gradient(ellipse 750px 550px at 8% -5%, rgba(47, 125, 79, 0.18), transparent 60%),
+    radial-gradient(ellipse 800px 600px at 105% 10%, rgba(79, 174, 118, 0.16), transparent 60%),
+    radial-gradient(ellipse 800px 700px at 50% 120%, rgba(120, 150, 60, 0.1), transparent 60%);
 }
 :root[data-palette="forest"][data-theme="dark"] {
   --bg: #0c1811;
@@ -80,6 +108,10 @@
   --muted: #85a68e;
   --accent: #4fae76;
   --accent-fg: #06130b;
+  --bg-art:
+    radial-gradient(ellipse 750px 550px at 8% -5%, rgba(79, 174, 118, 0.16), transparent 60%),
+    radial-gradient(ellipse 800px 600px at 105% 10%, rgba(47, 125, 79, 0.2), transparent 60%),
+    radial-gradient(ellipse 800px 700px at 50% 120%, rgba(60, 110, 40, 0.16), transparent 60%);
 }
 
 @theme inline {
@@ -95,7 +127,21 @@
 }
 
 body {
+  position: relative;
   background: var(--bg);
   color: var(--fg);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Decorative theme artwork, fixed behind all content. Kept as a separate
+   layer (not on `body` background directly) so it doesn't scroll and stays
+   under opaque bg-surface/bg-bg panels without needing z-index juggling on
+   every component. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: var(--bg-art);
+  background-repeat: no-repeat;
 }

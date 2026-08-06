@@ -29,7 +29,7 @@ function LoginForm() {
   };
 
   return (
-    <div className="flex h-screen items-center justify-center bg-bg text-fg">
+    <div className="flex h-screen items-center justify-center text-fg">
       <div className="w-full max-w-sm px-6">
         <h1 className="mb-1 text-lg font-semibold">Nodability</h1>
         <p className="mb-6 text-sm text-muted">Sign in with a magic link.</p>

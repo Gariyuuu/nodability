@@ -4,11 +4,27 @@ export type Palette = "slate" | "ocean" | "sunset" | "forest";
 export const THEME_STORAGE_KEY = "nodability-theme";
 export const PALETTE_STORAGE_KEY = "nodability-palette";
 
-export const PALETTES: { id: Palette; label: string; swatch: string }[] = [
-  { id: "slate", label: "Slate", swatch: "#111827" },
-  { id: "ocean", label: "Ocean", swatch: "#0f7ea3" },
-  { id: "sunset", label: "Sunset", swatch: "#e2683b" },
-  { id: "forest", label: "Forest", swatch: "#2f7d4f" },
+export const PALETTES: { id: Palette; label: string; preview: string }[] = [
+  {
+    id: "slate",
+    label: "Slate",
+    preview: "linear-gradient(135deg, #64748b, #1e293b)",
+  },
+  {
+    id: "ocean",
+    label: "Ocean",
+    preview: "linear-gradient(135deg, #37b6dd, #0f7ea3)",
+  },
+  {
+    id: "sunset",
+    label: "Sunset",
+    preview: "linear-gradient(135deg, #ff8a5c, #c75a8c)",
+  },
+  {
+    id: "forest",
+    label: "Forest",
+    preview: "linear-gradient(135deg, #4fae76, #2f7d4f)",
+  },
 ];
 
 // Inlined into a <script> in the <head> so the right theme applies before

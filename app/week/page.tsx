@@ -113,7 +113,7 @@ export default function WeekPage() {
   const rightDays = weekDays.slice(4); // Fri-Sun
 
   return (
-    <div className="flex h-screen flex-col bg-bg text-fg">
+    <div className="flex h-screen flex-col text-fg">
       <header className="flex items-center justify-between border-b border-border px-6 py-4">
         <h1 className="text-lg font-semibold">Nodability — This Week</h1>
         <div className="flex items-center gap-4">

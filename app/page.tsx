@@ -16,7 +16,7 @@ export default function Home() {
   const bumpRefresh = () => setRefreshKey((k) => k + 1);
 
   return (
-    <div className="flex h-screen flex-col bg-bg text-fg">
+    <div className="flex h-screen flex-col text-fg">
       <header className="flex items-center justify-between border-b border-border px-6 py-4">
         <h1 className="text-lg font-semibold">Nodability</h1>
         <div className="flex items-center gap-4">

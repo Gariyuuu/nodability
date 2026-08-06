@@ -25,7 +25,7 @@ export default function ThemeToggle() {
         🎨
       </button>
       {open ? (
-        <div className="absolute right-0 z-10 mt-2 w-48 rounded-lg border border-border bg-surface p-3 shadow-lg">
+        <div className="absolute right-0 z-10 mt-2 w-56 rounded-lg border border-border bg-surface p-3 shadow-lg">
           <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Mode</p>
           <div className="mb-3 flex gap-1">
             {MODES.map((m) => (
@@ -41,18 +41,22 @@ export default function ThemeToggle() {
             ))}
           </div>
           <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Palette</p>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {PALETTES.map((p) => (
               <button
                 key={p.id}
                 onClick={() => setPalette(p.id)}
-                aria-label={p.label}
                 title={p.label}
-                className={`h-6 w-6 rounded-full border-2 ${
+                className={`flex flex-col items-center gap-1 rounded-md border-2 p-1 ${
                   palette === p.id ? "border-fg" : "border-transparent"
                 }`}
-                style={{ backgroundColor: p.swatch }}
-              />
+              >
+                <span
+                  className="h-8 w-full rounded"
+                  style={{ backgroundImage: p.preview }}
+                />
+                <span className="text-[10px] text-fg">{p.label}</span>
+              </button>
             ))}
           </div>
         </div>
