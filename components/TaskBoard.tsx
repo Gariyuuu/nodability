@@ -32,6 +32,9 @@ export default function TaskBoard({
   };
 
   useEffect(() => {
+    // Standard fetch-on-mount/refresh: setState happens after an await, not synchronously in
+    // the effect body. See app/ideas/page.tsx for the same justification.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [refreshKey]);
 

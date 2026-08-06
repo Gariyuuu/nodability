@@ -93,6 +93,25 @@ export async function insertTask(
   return data;
 }
 
+export async function taskExistsWithTitle(
+  userId: string,
+  categoryId: string,
+  title: string,
+): Promise<boolean> {
+  const { count, error } = await supabase
+    .from("tasks")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("category_id", categoryId)
+    .ilike("title", title.trim());
+  if (error) throw error;
+  return (count ?? 0) > 0;
+}
+
+interface TaskWithCategoryRow extends Task {
+  categories: { name: string; group_name: CategoryGroup } | null;
+}
+
 export async function listTasks(
   userId: string,
 ): Promise<(Task & { category_name: string | null; category_group: CategoryGroup | null })[]> {
@@ -102,7 +121,7 @@ export async function listTasks(
     .eq("user_id", userId)
     .order("start_date", { ascending: true, nullsFirst: false });
   if (error) throw error;
-  return (data ?? []).map((row: any) => ({
+  return ((data ?? []) as TaskWithCategoryRow[]).map((row) => ({
     ...row,
     category_name: row.categories?.name ?? null,
     category_group: row.categories?.group_name ?? null,
@@ -206,6 +225,16 @@ export async function deleteCategoryByName(
   };
 }
 
+// Only the fields this function actually reads — `categories` is selected solely to support
+// the `.ilike("categories.name", ...)` filter above and is never accessed here, so it's
+// deliberately left out rather than modeled (Supabase's untyped client infers relation
+// fields as arrays without a generated Database type, which isn't worth introducing here).
+interface TaskDeletionMatchRow {
+  id: string;
+  title: string;
+  category_id: string | null;
+}
+
 export async function deleteTaskByTitle(
   userId: string,
   title: string,
@@ -226,14 +255,15 @@ export async function deleteTaskByTitle(
       .ilike("categories.name", categoryName.trim());
   }
 
-  const { data: matches, error } = await query;
+  const { data, error } = await query;
   if (error) throw error;
+  const matches = data as TaskDeletionMatchRow[] | null;
   if (!matches || matches.length === 0) {
     return { found: false, deletedTitles: [] };
   }
 
-  const ids = matches.map((m: any) => m.id);
-  const categoryIds = [...new Set(matches.map((m: any) => m.category_id).filter(Boolean))];
+  const ids = matches.map((m) => m.id);
+  const categoryIds = [...new Set(matches.map((m) => m.category_id).filter(Boolean))];
 
   const { error: deleteError } = await supabase
     .from("tasks")
@@ -248,6 +278,6 @@ export async function deleteTaskByTitle(
 
   return {
     found: true,
-    deletedTitles: matches.map((m: any) => m.title),
+    deletedTitles: matches.map((m) => m.title),
   };
 }

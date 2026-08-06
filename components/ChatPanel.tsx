@@ -29,6 +29,10 @@ export default function ChatPanel({ onTasksChanged }: { onTasksChanged: () => vo
         body: JSON.stringify({ message: text }),
       });
 
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || "Request failed");
+      }
       if (!res.body) throw new Error("No response body");
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -76,7 +80,7 @@ export default function ChatPanel({ onTasksChanged }: { onTasksChanged: () => vo
         {messages.length === 0 && (
           <div>
             <p className="mb-3 text-sm text-muted">
-              Hey — tell me what you've got going on and I&apos;ll get it organized.
+              Hey — tell me what you&apos;ve got going on and I&apos;ll get it organized.
             </p>
             <div className="flex flex-wrap gap-2">
               {SUGGESTIONS.map((s) => (

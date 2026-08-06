@@ -55,6 +55,13 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
+// Excludes Next internals, the generated icon routes, and any request for a static file
+// under public/ (matched by extension) — anything in public/ must stay reachable by logged-
+// out visitors (e.g. /theme/*.jpg, referenced from CSS on the public /login page) or it'll
+// silently 307-redirect to /login instead of serving the asset, exactly like the /icon bug
+// this same exclusion list already had to fix once.
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon|apple-icon).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|icon|apple-icon|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|txt|md)$).*)",
+  ],
 };

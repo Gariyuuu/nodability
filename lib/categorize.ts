@@ -16,7 +16,6 @@ export interface TaskToDelete {
 }
 
 export interface ExtractionResult {
-  is_recall_query: boolean;
   tasks: ExtractedTask[];
   delete_categories: string[];
   delete_tasks: TaskToDelete[];
@@ -24,16 +23,10 @@ export interface ExtractionResult {
 
 const EXTRACT_TOOL: Anthropic.Tool = {
   name: "extract_tasks",
-  description:
-    "Record whether the message is a recall/query, any new tasks extracted from it, and any deletions the user asked for.",
+  description: "Record any new tasks extracted from the message, and any deletions the user asked for.",
   input_schema: {
     type: "object",
     properties: {
-      is_recall_query: {
-        type: "boolean",
-        description:
-          "True if the user is asking to recall/list existing tasks rather than only stating something new.",
-      },
       tasks: {
         type: "array",
         items: {
@@ -88,7 +81,7 @@ const EXTRACT_TOOL: Anthropic.Tool = {
         description: "Specific tasks the user explicitly asked to delete/remove.",
       },
     },
-    required: ["is_recall_query", "tasks", "delete_categories", "delete_tasks"],
+    required: ["tasks", "delete_categories", "delete_tasks"],
   },
 };
 

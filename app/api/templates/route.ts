@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireUserId, UnauthorizedError } from "@/lib/auth";
-import { getOrCreateCategory, insertTask } from "@/lib/tasks";
+import { getOrCreateCategory, insertTask, taskExistsWithTitle } from "@/lib/tasks";
 import { findTemplate } from "@/lib/templates";
 
 export async function POST(req: Request) {
@@ -14,6 +14,11 @@ export async function POST(req: Request) {
 
     for (const task of template.tasks) {
       const category = await getOrCreateCategory(userId, task.category);
+      // Idempotent: skip if this exact title already exists in this category, so applying
+      // the same template twice (or applying it after already doing the example task
+      // yourself) doesn't create duplicates.
+      const alreadyExists = await taskExistsWithTitle(userId, category.id, task.title);
+      if (alreadyExists) continue;
       await insertTask(userId, {
         title: task.title,
         categoryId: category.id,

@@ -28,18 +28,23 @@ function applyTheme(mode: ThemeMode, palette: Palette) {
   document.documentElement.setAttribute("data-palette", palette);
 }
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [mode, setModeState] = useState<ThemeMode>("system");
-  const [palette, setPaletteState] = useState<Palette>("slate");
+// `typeof window === "undefined"` during SSR (localStorage doesn't exist in Node) — falls
+// back to the same defaults the server rendered, then reads the real value synchronously on
+// the client's first render. No hydration mismatch: mode/palette never affect visible DOM
+// while the theme popover is closed, and this avoids an extra post-mount re-render entirely
+// (no setState-in-effect needed for hydration).
+function readStoredMode(): ThemeMode {
+  if (typeof window === "undefined") return "system";
+  return (localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode | null) ?? "system";
+}
+function readStoredPalette(): Palette {
+  if (typeof window === "undefined") return "slate";
+  return (localStorage.getItem(PALETTE_STORAGE_KEY) as Palette | null) ?? "slate";
+}
 
-  // Sync React state from what the no-flash script already read/applied.
-  useEffect(() => {
-    const storedMode = (localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode | null) ?? "system";
-    const storedPalette =
-      (localStorage.getItem(PALETTE_STORAGE_KEY) as Palette | null) ?? "slate";
-    setModeState(storedMode);
-    setPaletteState(storedPalette);
-  }, []);
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [mode, setModeState] = useState<ThemeMode>(readStoredMode);
+  const [palette, setPaletteState] = useState<Palette>(readStoredPalette);
 
   useEffect(() => {
     applyTheme(mode, palette);

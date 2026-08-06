@@ -24,6 +24,10 @@ export default function IdeasPage() {
   };
 
   useEffect(() => {
+    // Standard fetch-on-mount: setState happens after an await, not synchronously in the
+    // effect body, so this doesn't cause the cascading-render problem the rule guards
+    // against. No Suspense/data-fetching-library migration is warranted for this app's scale.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, []);
 

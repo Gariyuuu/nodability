@@ -4,6 +4,10 @@
  * Palettes: each defines the same 7 semantic roles (bg/fg/surface/border/
  * muted/accent/accent-fg) for light and dark. `data-palette` picks the hue,
  * `data-theme` picks light vs dark — set on <html> by ThemeProvider.
+ *
+ * --bg-art photos are self-hosted in public/theme/ (see public/theme/SOURCES.md
+ * for the original Unsplash photo IDs/license) rather than hotlinked, so the
+ * backgrounds don't silently break if the source photos are ever removed.
  */
 :root,
 :root[data-palette="slate"] {
@@ -16,7 +20,7 @@
   --accent-fg: #ffffff;
   --bg-art:
     linear-gradient(rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.82)),
-    url("https://images.unsplash.com/photo-1541140134513-85a161dc4a00?w=1920&q=70&auto=format&fit=crop");
+    url("/theme/slate.jpg");
 }
 :root[data-palette="slate"][data-theme="dark"] {
   --bg: #0a0a0a;
@@ -28,7 +32,7 @@
   --accent-fg: #111827;
   --bg-art:
     linear-gradient(rgba(10, 10, 10, 0.85), rgba(10, 10, 10, 0.85)),
-    url("https://images.unsplash.com/photo-1541140134513-85a161dc4a00?w=1920&q=70&auto=format&fit=crop");
+    url("/theme/slate.jpg");
 }
 
 :root[data-palette="ocean"] {
@@ -41,7 +45,7 @@
   --accent-fg: #ffffff;
   --bg-art:
     linear-gradient(rgba(247, 251, 253, 0.8), rgba(247, 251, 253, 0.8)),
-    url("https://images.unsplash.com/photo-1542608974741-76a4c0d4a3b7?w=1920&q=70&auto=format&fit=crop");
+    url("/theme/ocean.jpg");
 }
 :root[data-palette="ocean"][data-theme="dark"] {
   --bg: #071a24;
@@ -53,7 +57,7 @@
   --accent-fg: #04222c;
   --bg-art:
     linear-gradient(rgba(7, 26, 36, 0.85), rgba(7, 26, 36, 0.85)),
-    url("https://images.unsplash.com/photo-1542608974741-76a4c0d4a3b7?w=1920&q=70&auto=format&fit=crop");
+    url("/theme/ocean.jpg");
 }
 
 :root[data-palette="sunset"] {
@@ -66,7 +70,7 @@
   --accent-fg: #ffffff;
   --bg-art:
     linear-gradient(rgba(255, 248, 244, 0.8), rgba(255, 248, 244, 0.8)),
-    url("https://images.unsplash.com/photo-1490735891913-40897cdaafd1?w=1920&q=70&auto=format&fit=crop");
+    url("/theme/sunset.jpg");
 }
 :root[data-palette="sunset"][data-theme="dark"] {
   --bg: #241109;
@@ -78,7 +82,7 @@
   --accent-fg: #291005;
   --bg-art:
     linear-gradient(rgba(36, 17, 9, 0.85), rgba(36, 17, 9, 0.85)),
-    url("https://images.unsplash.com/photo-1490735891913-40897cdaafd1?w=1920&q=70&auto=format&fit=crop");
+    url("/theme/sunset.jpg");
 }
 
 :root[data-palette="forest"] {
@@ -91,7 +95,7 @@
   --accent-fg: #ffffff;
   --bg-art:
     linear-gradient(rgba(246, 250, 246, 0.8), rgba(246, 250, 246, 0.8)),
-    url("https://images.unsplash.com/photo-1626657171364-4af23203469b?w=1920&q=70&auto=format&fit=crop");
+    url("/theme/forest.jpg");
 }
 :root[data-palette="forest"][data-theme="dark"] {
   --bg: #0c1811;
@@ -103,7 +107,7 @@
   --accent-fg: #06130b;
   --bg-art:
     linear-gradient(rgba(12, 24, 17, 0.85), rgba(12, 24, 17, 0.85)),
-    url("https://images.unsplash.com/photo-1626657171364-4af23203469b?w=1920&q=70&auto=format&fit=crop");
+    url("/theme/forest.jpg");
 }
 
 @theme inline {

@@ -43,9 +43,15 @@ export default function Sidebar({
 
   return (
     <nav className="w-48 shrink-0 border-r border-border pr-4">
-      <h2 className="mb-3 text-xs font-semibold text-muted uppercase tracking-wide">
+      <h2 className="mb-1 text-xs font-semibold text-muted uppercase tracking-wide">
         Categories
       </h2>
+      {categories.length > 0 ? (
+        <p className="mb-3 text-[11px] leading-snug text-muted">
+          Click the dot to tag a category Academic/Personal/Work/Other — used to color and
+          filter the calendar.
+        </p>
+      ) : null}
       <ul className="space-y-1">
         <li>
           <button
@@ -70,8 +76,8 @@ export default function Sidebar({
             <button
               onClick={() => cycleGroup(c)}
               title={`Group: ${GROUP_LABELS[c.group_name]} (click to change)`}
-              aria-label={`Group: ${GROUP_LABELS[c.group_name]}`}
-              className="h-2.5 w-2.5 shrink-0 rounded-full"
+              aria-label={`Group: ${GROUP_LABELS[c.group_name]} (click to change)`}
+              className="h-3.5 w-3.5 shrink-0 rounded-full border border-border hover:scale-110"
               style={{ backgroundColor: GROUP_COLORS[c.group_name] }}
             />
           </li>
