@@ -23,20 +23,20 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
 - **Permissions:** Requires auth (`requireUserId()`); fully scoped to the caller's own data.
 - **Validation:** Only checks `message` is a non-empty string (`app/api/chat/route.ts:27`).
   No length limit, no profanity/abuse filtering, no rate limiting.
-- **Error states:** Network-level fetch failure → friendly "Something went wrong reaching the
-  assistant" message (`ChatPanel.tsx`). **Server-side errors (Haiku extraction failure,
-  Supabase write failure) are NOT caught** — see `CLAUDE.md` ISSUE-002. This is the single
-  most concrete "broken edge case" found in this audit; not reproduced live, found by code
-  inspection.
+- **Error states:** Network-level fetch failure or a server-side error (Haiku extraction
+  failure, Supabase write failure) both now surface the friendly "Something went wrong
+  reaching the assistant" message (`ChatPanel.tsx`) — the route wraps its body in try/catch
+  and returns a clean `500`, and the client checks `res.ok` before streaming. Fixed as
+  `CLAUDE.md` ISSUE-002 (was previously the single most concrete "broken edge case" in this
+  app; verified fixed via code review + passing checks, not yet forced-triggered live).
 - **Loading states:** Assistant bubble shows "…" while streaming (`sending` state).
 - **Empty state:** Shows a greeting + 3 suggestion chips when `messages.length === 0`.
 - **Edge cases handled:** Multi-day date ranges, specific due times, category reuse via
-  case-insensitive match, "recall query" detection (though `is_recall_query` is extracted but
-  **not currently used** to change behavior anywhere in `app/api/chat/route.ts` — Inferred
-  dead field, extracted but unread).
+  case-insensitive match. (The extraction schema previously had an unused `is_recall_query`
+  field — removed entirely rather than left dead.)
 - **Tests:** None.
-- **Known issues:** ISSUE-002 (no error handling past auth check); mid-stream errors skip
-  persisting that turn to `messages`.
+- **Known issues:** Mid-stream errors still skip persisting that turn to `messages` (an
+  inherent limit of streaming — not addressed, low impact).
 - **Remaining work / future improvements:** Wrap the route body in try/catch; use or remove
   the unused `is_recall_query` field; add basic rate limiting.
 
@@ -59,8 +59,8 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
 - **Empty state:** "No tasks yet — tell the chat what you have to do, or grab a template
   above, and it'll show up here."
 - **Tests:** None.
-- **Known issues:** None beyond the shared lint issue (`react-hooks/set-state-in-effect` at
-  `TaskBoard.tsx:35`).
+- **Known issues:** None. (The `react-hooks/set-state-in-effect` lint error previously here
+  was fixed via a justified `eslint-disable-next-line` — see `CLAUDE.md` ISSUE-001.)
 
 ---
 
@@ -77,8 +77,7 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
 - **Error/loading/empty states:** All present ("Loading…", "No ideas yet — jot one down
   above.").
 - **Tests:** None.
-- **Known issues:** Shares the `react-hooks/set-state-in-effect` lint error at
-  `app/ideas/page.tsx:27`.
+- **Known issues:** None (same lint fix as the task board — see `CLAUDE.md` ISSUE-001).
 
 ---
 
@@ -129,9 +128,11 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
 - **User flow:** `Sidebar` → click the colored dot next to a category → cycles to the next
   group. `app/week/page.tsx` → filter chip row (All/Academic/Personal/Work/Other).
 - **Status: Verified complete as a mechanism** (DB column + API + UI all wired end-to-end and
-  working) **but effectively unused in real data** — all 3 live categories are still
-  `group_name = 'other'` as of the audit (see `CLAUDE.md` ISSUE-003). Classify the *feature
-  mechanism* as Verified complete; classify *actual adoption* as a UX gap.
+  working) — **adoption unconfirmed**: all 3 live categories were still `group_name = 'other'`
+  as of the original audit. A discoverability fix shipped afterward (a visible hint line +
+  larger, bordered dot instead of an unlabeled one, see `CLAUDE.md` ISSUE-003), but whether
+  that actually gets the two real users to use it hasn't been re-checked — verify live
+  `group_name` values in a future session rather than assuming the fix "worked."
 - **Frontend:** `components/Sidebar.tsx` (set), `app/week/page.tsx` +
   `components/calendar/*` (filter/display).
 - **Backend:** `PATCH /api/categories`, `lib/tasks.ts:updateCategoryGroup`.
@@ -139,7 +140,7 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
 - **Validation:** Server-side allow-list check (`VALID_GROUPS`) in
   `app/api/categories/route.ts`; matching DB `CHECK` constraint.
 - **Tests:** None.
-- **Known issues:** ISSUE-003 (low discoverability/adoption).
+- **Known issues:** None code-level; adoption is a UX question, not a bug (see above).
 
 ---
 
@@ -157,12 +158,13 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
   stored in `localStorage`, not in the `profiles`/user record (there is no `profiles` table
   at all in this schema) — so switching browsers/devices resets the theme choice. This is
   Inferred to be intentional given the app's small scope, not a bug.
-- **External integration:** Hotlinked Unsplash CDN photo URLs (one specific photo ID per
-  palette) — see ISSUE-004.
-- **Tests:** Verified visually via ad hoc Playwright screenshots during development (not
-  committed to the repo as a reusable test) — see `SESSION_LOG.md`.
-- **Known issues:** ISSUE-004 (external image dependency); `ThemeProvider.tsx:40` is one of
-  the 4 `react-hooks/set-state-in-effect` lint errors.
+- **Assets:** Self-hosted photos at `public/theme/{slate,ocean,sunset,forest}.jpg` (originally
+  hotlinked from Unsplash — moved to self-hosted for durability, see `CLAUDE.md` ISSUE-004 and
+  `public/theme/SOURCES.md`).
+- **Tests:** Verified visually via ad hoc Playwright screenshots during development, both
+  before and after self-hosting the images — see `SESSION_LOG.md`.
+- **Known issues:** None. (`ThemeProvider.tsx`'s lint error was fixed with a genuine
+  structural change — lazy `useState` initializers instead of an effect — not a suppression.)
 
 ---
 
@@ -172,13 +174,15 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
   point" (Student / Work / Home & Life).
 - **User flow:** `/templates` → pick a card → "Use this template" → redirected to `/` with
   the new categories/tasks visible.
-- **Status: Verified complete**, with a known non-idempotency issue.
+- **Status: Verified complete**, now idempotent.
 - **Frontend:** `app/templates/page.tsx` (full page — replaced an earlier header popover,
   removed in the same commit).
 - **Backend:** `POST /api/templates`, `lib/templates.ts` (pure data, 3 templates).
-- **Database:** `categories`, `tasks` (writes via existing `getOrCreateCategory`/`insertTask`).
-- **Known issues:** ISSUE-005 — re-applying a template duplicates its example tasks
-  (`getOrCreateCategory` is idempotent, `insertTask` is not).
+- **Database:** `categories`, `tasks` (writes via existing `getOrCreateCategory`/`insertTask`,
+  guarded by `lib/tasks.ts:taskExistsWithTitle`).
+- **Known issues:** None. (Previously, re-applying a template duplicated its example tasks —
+  fixed by checking for an existing task with the same title/category before inserting, see
+  `CLAUDE.md` ISSUE-005.)
 
 ---
 
@@ -222,16 +226,15 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
 - **Purpose:** Replace the default Next.js favicon with a branded one.
 - **Status: Verified complete.**
 - **Frontend:** `app/icon.tsx`, `app/apple-icon.tsx` (generated via `next/og`).
-- **Known issues:** `app/favicon.ico` (old Create-Next-App default) is still present,
-  unused/superseded — cosmetic cleanup only, not a bug.
+- **Known issues:** None. (`app/favicon.ico`, the old Create-Next-App default, was deleted.)
 
 ---
 
 ## Unused / dead code found during audit (not a "feature," but worth tracking)
 
-- `public/{file,globe,next,vercel,window}.svg` — Create-Next-App scaffold defaults, zero
-  references anywhere in source. Safe to delete.
-- `ExtractionResult.is_recall_query` (from `lib/categorize.ts`) — extracted by Haiku but never
-  read/used in `app/api/chat/route.ts`. Either wire it up (e.g. to change response framing for
-  recall queries) or remove it from the extraction schema.
+**Status: cleaned up.** Both items below were removed in the fix-everything session (commit
+`18200e7`) — kept here as a record, not because they still exist:
+- ~~`public/{file,globe,next,vercel,window}.svg`~~ — deleted.
+- ~~`ExtractionResult.is_recall_query`~~ — removed entirely from the extraction schema and
+  prompt instructions.
 - `app/favicon.ico` — see Feature 10 above.

@@ -13,8 +13,12 @@ Practical map of files a future coding agent is likely to touch. Trivial generat
 - **Edit when:** adding a new public (unauthenticated) route, or changing which paths require
   login.
 - **Risk:** High. A wrong `matcher` regex or an incomplete `PUBLIC_PATHS` list can lock out
-  every user or expose protected pages. Always excludes `/icon`/`/apple-icon` — removing that
-  exclusion breaks the favicon for logged-out visitors (happened once during development).
+  every user or expose protected pages. The matcher excludes `/icon`/`/apple-icon` and any
+  path ending in a common static-asset extension (`.svg|.png|.jpg|.jpeg|.gif|.webp|.ico|.css|
+  .js|.txt|.md`) — this exact bug (a `public/` asset getting redirected to `/login` for
+  logged-out visitors) has happened twice: once for `/icon`, once for the self-hosted
+  `/theme/*.jpg` background images. If you add a `public/` asset with a different extension,
+  add it to this regex.
 
 ## `lib/auth.ts`
 - **Purpose:** `requireUserId()` — the auth check every API route calls at its start.
@@ -212,10 +216,19 @@ Practical map of files a future coding agent is likely to touch. Trivial generat
   particular has a mandatory two-pass, manual-backfill-in-between execution order documented
   in its own header comment.
 
-## `public/*.svg` (file.svg, globe.svg, next.svg, vercel.svg, window.svg)
-- **Purpose:** None currently — these are unused Create-Next-App scaffold defaults.
-  **Verified zero references** anywhere in `app/`/`components/` source via grep.
-- **Edit when:** never; safe to delete as cleanup, not required.
+## `public/theme/` (slate.jpg, ocean.jpg, sunset.jpg, forest.jpg, SOURCES.md)
+- **Purpose:** Self-hosted theme background photos, one per palette, referenced from
+  `app/globals.css`'s `--bg-art` values. `SOURCES.md` records the original Unsplash photo IDs
+  and license for provenance.
+- **Called by:** `app/globals.css` via `url("/theme/<name>.jpg")`.
+- **Edit when:** changing a palette's background photo — replace the file (keep the same
+  name) or add a new palette's image and update `globals.css` accordingly.
+- **Risk:** Medium. Must stay excluded from `proxy.ts`'s auth gate (it is, via the
+  extension-based matcher) or the images 307-redirect for logged-out visitors — this exact
+  bug happened once already when these files were added.
+
+(The old `public/*.svg` Create-Next-App scaffold defaults — `file.svg`, `globe.svg`,
+`next.svg`, `vercel.svg`, `window.svg` — were unused and have been deleted.)
 
 ## `AGENTS.md` / `CLAUDE.md` at repo root
 - `AGENTS.md` contains a short, tool-managed (has `<!-- BEGIN/END:nextjs-agent-rules -->`

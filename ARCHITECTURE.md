@@ -242,7 +242,12 @@ queries instead.
 2. **No staging environment:** Preview deployments on Vercel point at the same production
    Supabase project — there is no isolated environment to test schema changes against before
    they hit real data.
-3. **Chat route fragility:** see ISSUE-002 — a Haiku extraction failure surfaces as garbled
-   text in the chat UI rather than a clean error.
-4. **External image dependency:** theme backgrounds depend on specific Unsplash CDN URLs
-   staying live indefinitely (ISSUE-004).
+3. ~~**Chat route fragility**~~ — **Fixed.** `/api/chat` now catches failures and returns a
+   clean error response (see `CLAUDE.md` ISSUE-002).
+4. ~~**External image dependency**~~ — **Fixed.** Theme background photos are self-hosted in
+   `public/theme/` rather than depending on Unsplash CDN URLs staying live (see `CLAUDE.md`
+   ISSUE-004).
+5. **`next` is pinned behind 3 known-vulnerable transitive dependencies:** `postcss`/`sharp`
+   (via `next`) have open high-severity advisories; fixing them requires a `next` version
+   bump past the pinned `16.2.11`, deliberately deferred pending a dedicated review pass (see
+   `SECURITY.md`, `CLAUDE.md` ISSUE-006).

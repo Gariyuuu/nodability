@@ -145,9 +145,11 @@ changes are instant, not animated).
 
 ## Image asset conventions
 
-No local image assets are used for content (only the unused scaffold SVGs in `public/` — see
-`FILE_MAP.md`). All "real" imagery (the 4 theme background photos) is hotlinked directly from
-`images.unsplash.com` via CSS `url()` — there is no `next/image` usage anywhere in this app.
+The 4 theme background photos are self-hosted at `public/theme/{slate,ocean,sunset,forest}.jpg`
+(originally hotlinked from `images.unsplash.com`, downloaded for durability — see
+`public/theme/SOURCES.md` for provenance), referenced via plain CSS `url()` in
+`app/globals.css` — there is no `next/image` usage anywhere in this app. The unused
+Create-Next-App scaffold SVGs that used to live in `public/` have been deleted.
 
 ## Accessibility
 

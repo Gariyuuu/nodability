@@ -1,60 +1,83 @@
 # PROJECT_STATE.md
 
-**This file describes the exact state of the repository at the moment of a documentation
-handoff audit. It is meant to let a new session resume from precisely this point.**
+**This file describes the exact state of the repository at the moment of the last update. It
+is meant to let a new session resume from precisely this point.**
 
-- **Audit timestamp:** 2026-08-06 (documentation audit + account-switch checkpoint, same
-  day); **commit timestamp: 2026-08-06, same day** — the user explicitly instructed "commit
-  them all" and the 17-file documentation set was committed as `071f6a3`.
+- **Last updated:** 2026-08-06 — a follow-up session that fixed every open item from the
+  documentation audit (`BUG-001`, `BUG-002`, `TODO-001` through `TODO-007`).
 - **Current branch:** `main`
-- **Latest commit:** `071f6a3` — "Add permanent documentation/memory system for
-  account-switch handoff" (17 files: `CLAUDE.md` modified in place, 16 new files added).
-  Previous commit: `6b55515` — "Add real photo backgrounds, month/year calendar views,
-  templates page, chat suggestions."
+- **Latest commit:** `18200e7` — "Fix all tracked bugs/tech-debt: lint errors, chat error
+  handling, and more". Previous commits: `d92a96b` (doc-sync follow-up), `071f6a3`
+  (documentation/memory system), `6b55515` (real photo backgrounds, calendar views, templates
+  page, chat suggestions).
 - **Working tree: clean** (Verified via `git status` immediately after the commit).
-- **Not pushed.** `main` is ahead of `origin/main` by 1 commit — the user asked to commit,
-  not to push; push only if separately instructed.
-- **Uncommitted files:** None.
-- **Untracked files:** None.
-- **No application code has changed** in either the documentation audit or this commit. Only
-  `.md` documentation files are affected — `git diff --stat` against the prior commit
-  confirmed zero changes to anything under `app/`, `components/`, `lib/`, `scripts/`,
-  `supabase/`, or any config file.
+- **Not pushed.** `main` is ahead of `origin/main` by 3 commits (`071f6a3`, `d92a96b`,
+  `18200e7`) — commits have been made as instructed; nothing has been pushed since no push was
+  instructed. Push whenever appropriate.
+- **Deployed to production.** `vercel --prod --yes` was run after `18200e7`; live smoke tests
+  (curl + a Playwright screenshot of `/login`) confirm the deployment matches the commit.
+- **Uncommitted files:** None. **Untracked files:** None.
 
 ## Active development objective
 
-None. `DOC-001` (see `TASKS.md`) is complete — the 17-file documentation set is committed. No
-product feature work is in progress or intended right now. The next objective should come
-from `TASKS.md`'s "Next up" section (`BUG-001` or `BUG-002`).
+None. Every tracked task is complete:
+- `DOC-001` (documentation/memory system) — done, commit `071f6a3` + `d92a96b`.
+- `BUG-001` (9 ESLint errors) — done, commit `18200e7`. `npm run lint` now exits 0.
+- `BUG-002` (`/api/chat` error handling) — done, commit `18200e7`.
+- `TODO-001` through `TODO-007` — done, commit `18200e7`. See `CLAUDE.md`'s Known Issues
+  section (ISSUE-001 through ISSUE-005, all marked Resolved/Improved) for exactly what
+  changed in each.
+
+The only remaining open item is **ISSUE-006** (3 of 4 `npm audit` advisories, deliberately
+deferred — fixing them requires bumping `next` past the pinned `16.2.11`, which needs its own
+dedicated review pass, not a drive-by fix). This is not a "next task to do now," it's a
+recorded, intentional deferral.
 
 ## Last completed task
 
-Full feature pass across 3 sub-sessions (all now merged to `main` and deployed to
-production):
+A single follow-up session (commit `18200e7`) that fixed every open bug/tech-debt item found
+during the earlier documentation audit, in one pass:
 
-1. **Per-user authentication** (commit `1d78489` + 2 follow-up fixes `426b01e`, `ffb225c`) —
-   magic-link, invite-only auth; `user_id` scoping added to all 4 tables; RLS policies added.
-2. **Theming + templates + chat character + patch notes** (commits `739a283`, `b3e614d`) —
-   4-palette light/dark theme system, starter-templates popover (later replaced), chat persona
-   "Nodo", `/changelog` page, generated app icon.
-3. **Real photo backgrounds + calendar views + templates page + chat suggestions** (commit
-   `6b55515`, the current `HEAD`) — swapped CSS-gradient theme art for real Unsplash photos;
-   added `categories.group_name` (Academic/Personal/Work/Other) via migration `005`; built
-   Week/Month/Year calendar views (`components/calendar/*`); replaced the templates popover
-   with a full `/templates` page; added suggestion chips to the chat panel.
+1. **`BUG-001`** — Fixed all 9 ESLint errors. `components/theme/ThemeProvider.tsx` got a real
+   structural fix (guarded lazy `useState` initializers instead of an effect, eliminating the
+   extra post-mount render entirely). The 3 fetch-on-mount cases
+   (`app/ideas/page.tsx`, `app/week/page.tsx`, `components/TaskBoard.tsx`) got a justified
+   `eslint-disable-next-line` each (standard, correct pattern; the lint rule is stricter than
+   warranted, and a full Suspense/SWR migration was judged disproportionate). Fixed the
+   unescaped apostrophe in `components/ChatPanel.tsx`. Replaced 4 `: any` casts in
+   `lib/tasks.ts` with two real interfaces matching the actual Supabase query shapes.
+2. **`BUG-002`** — `app/api/chat/route.ts`'s body is now wrapped in try/catch, returning a
+   clean `500` on failure instead of an unhandled error; `components/ChatPanel.tsx` now checks
+   `res.ok` before reading the response as a stream.
+3. **`TODO-002`** — Template application is now idempotent (`lib/tasks.ts:taskExistsWithTitle`
+   checks before each insert in `app/api/templates/route.ts`).
+4. **`TODO-004`** — Removed the unused `is_recall_query` field from `lib/categorize.ts`'s
+   extraction schema and `lib/prompts.ts`'s instructions.
+5. **`TODO-005`/`TODO-006`** — Deleted the 5 unused Create-Next-App scaffold SVGs and the
+   superseded `app/favicon.ico`.
+6. **`TODO-003`** — Self-hosted the 4 theme background photos at `public/theme/*.jpg` instead
+   of hotlinking Unsplash (with `public/theme/SOURCES.md` recording provenance). **This
+   surfaced a new bug in the same session:** `proxy.ts`'s auth-gate matcher didn't exclude
+   `/theme/*`, so the new images 307-redirected to `/login` for logged-out visitors — same
+   class of bug as the earlier `/icon` issue. Fixed by broadening the matcher to exclude any
+   path ending in a common static-asset extension, rather than enumerating paths one at a
+   time.
+7. **`TODO-001`** — Made life-area grouping more discoverable: a visible hint line plus a
+   larger, bordered dot instead of an unlabeled one. (Improvement, not a guarantee of
+   adoption — re-check live `group_name` values in a future session.)
+8. **`TODO-007`** — Ran `npm audit fix` (no `--force`), resolving the `brace-expansion`
+   advisory. Left the other 3 (`postcss`/`sharp` via `next`) deliberately unresolved (see
+   ISSUE-006 above).
 
-All of the above were deployed via `vercel --prod --yes` and smoke-tested (curl status checks
-+ ad hoc Playwright screenshots of the public `/login` page across all 4 palettes × 2 modes).
-The `categories.group_name` migration was run in the Supabase SQL Editor by the user and
-confirmed live (Verified via direct `select` against the `categories` table showing the new
-column present, defaulting to `'other'` on all 3 existing rows).
+All changes were verified (`npx tsc --noEmit`, `npm run lint`, `npm run build` all exit 0),
+committed, deployed via `vercel --prod --yes`, and smoke-tested live (curl status checks on
+`/login`, `/icon`, `/apple-icon`, all 4 `/theme/*.jpg` paths, protected routes, and `/api/tasks`;
+a Playwright screenshot confirming the self-hosted background renders correctly on the live
+`/login` page).
 
 ## Current unfinished task
 
-**None.** The documentation set is committed (`071f6a3`). The nearest thing to "unfinished"
-is the set of known issues in `CLAUDE.md` / `TASKS.md` (lint errors, `/api/chat` error
-handling, etc.) — none of which were being actively worked when the documentation audit, the
-account-switch checkpoint, or the commit itself took place.
+**None.**
 
 ## Files related to the unfinished task
 
@@ -62,38 +85,37 @@ N/A — no task is unfinished.
 
 ## What has already been attempted (this session, informational)
 
-- Attempted `npm run lint` → **failed**, 9 pre-existing errors (see
-  [Known issues in CLAUDE.md](CLAUDE.md#known-issues)). This was a *discovery* during the
-  audit, not a fix attempt — no code was changed to address it, per this task's "do not
-  implement new features" scope.
-- Attempted `npx tsc --noEmit` → passed, exit 0.
-- Attempted `npm run build` → passed, exit 0, all 15 routes generated successfully.
+- All fixes were implemented, verified locally (`tsc`/`lint`/`build`), then deployed and
+  re-verified live — no fix was left "probably works" without a real check.
+- Deliberately did **not** run `npm audit fix --force` (would bump `next` past the pinned
+  version) — see ISSUE-006 in `CLAUDE.md`.
+- Deliberately did **not** attempt a structural rewrite of the 3 fetch-on-mount components to
+  avoid `react-hooks/set-state-in-effect` "properly" (e.g. via SWR/React Query/Suspense) —
+  judged disproportionate risk/effort for this app's scale given no test suite exists to catch
+  regressions from such a rewrite.
 
 ## What currently works (Verified)
 
-- Production deployment at https://nodability.vercel.app is live and responding correctly:
-  `/login` → 200, `/icon` and `/apple-icon` → 200 `image/png`, protected routes (`/`, `/week`,
-  `/templates`, `/changelog`, all `/api/*`) → 307 redirect to `/login` (or 401 JSON for API
-  routes) when unauthenticated.
+- Production deployment at https://nodability.vercel.app is live and responding correctly,
+  post-fix: `/login` → 200, `/icon`/`/apple-icon`/all 4 `/theme/*.jpg` → 200 with correct
+  content types, protected routes → 307/401 as expected when logged out.
+- `npm run build`, `npx tsc --noEmit`, **and now `npm run lint`** all pass cleanly (exit 0).
 - Two real Supabase Auth accounts exist (the app owner's and their partner's) and have been
   used to sign in successfully. Real email addresses are intentionally not recorded in this
-  repo's docs since it's pushed to a public GitHub remote — look them up in the Supabase
-  dashboard if needed.
+  repo's docs since it's pushed to a public GitHub remote.
 - Live production data exists and is being actively used: 19 tasks, 112 chat messages, 7
-  ideas, 3 categories.
-- `categories.group_name` column exists in production and is queryable.
-- Build and type-check both pass cleanly.
+  ideas, 3 categories (as of the original audit — not re-queried after this session's changes
+  since none of them touch task/message/idea/category data itself).
 
 ## What currently fails / errors observed
 
-- `npm run lint` exits 1 with 9 errors (full list in `CLAUDE.md` → Known issues → ISSUE-001).
-- `app/api/chat/route.ts` has an unguarded failure path (ISSUE-002 in `CLAUDE.md`) — **not
-  reproduced/triggered during this audit**, identified by code inspection only. Treat as
-  "logically certain, empirically unconfirmed."
+Nothing application-level. `npm audit` still reports 3 high-severity advisories (down from 4),
+all transitive build-tooling dependencies, deliberately unresolved — see ISSUE-006 in
+`CLAUDE.md`.
 
 ## Blockers
 
-None currently blocking further development. The known issues above are all non-blocking.
+None.
 
 ## Assumptions currently in use (Inferred, not stated anywhere explicitly)
 
@@ -108,37 +130,34 @@ None currently blocking further development. The known issues above are all non-
 
 ## Temporary decisions (things done for expedience, flagged as such at the time)
 
-- The `console.error` in `app/auth/callback/route.ts:15` is a debug/observability leftover
-  from diagnosing the magic-link redirect issues encountered during development — mirrors a
-  real incident (localhost redirect + Supabase rate-limit issues) documented in
-  `SESSION_LOG.md`. Not harmful, but not part of a structured logging strategy.
-- Theme background images are hotlinked from Unsplash rather than self-hosted, as an
-  explicit "real quick" tradeoff (see `DECISIONS.md` DEC-006).
+- The `console.error` in `app/auth/callback/route.ts:15` and the new one in
+  `app/api/chat/route.ts`'s catch block are debug/observability leftovers, not part of a
+  structured logging strategy — acceptable at this app's scale but worth revisiting if
+  real monitoring is ever added.
+- The `eslint-disable-next-line react-hooks/set-state-in-effect` comments (3 of them) are a
+  documented, justified suppression rather than a structural rewrite — see `BUG-001` above
+  and `CLAUDE.md` ISSUE-001 for the reasoning. Revisit if this app ever adopts a proper
+  data-fetching library.
 
-## Next three recommended actions
+## Next recommended actions
 
-1. **Fix or triage ISSUE-001** (`npm run lint` failures) — either fix the 9 errors or make a
-   documented decision to accept/suppress specific rules, so `npm run lint` becomes a
-   trustworthy signal again. See `TASKS.md` → `BUG-001`.
-2. **Harden `/api/chat` error handling** (ISSUE-002) — add a try/catch around the route body
-   and make `ChatPanel.tsx` check `res.ok` before streaming the response. See `TASKS.md` →
-   `BUG-002`.
-3. **Decide whether to `git push`** — the documentation commit (`071f6a3`) is local only;
-   push it whenever appropriate (not done automatically since only a commit, not a push, was
-   instructed).
-
-(ISSUE-003 — the life-area grouping feature's low adoption — remains a valid lower-priority
-follow-up; see `TASKS.md` for the full queue.)
+1. **Decide whether to `git push`** — 3 local commits are ahead of `origin/main`.
+2. **When there's bandwidth for a dedicated review pass:** consider `npm audit fix --force`
+   (bumps `next` to `16.3.0`) — test thoroughly first, since there's no automated test suite
+   to catch regressions (see `TESTING.md`).
+3. **Watch real usage of life-area grouping** (`TODO-001`'s discoverability fix) — check back
+   on `categories.group_name` values in a future session to see if the two real users actually
+   started using it.
+4. **Consider adding a minimal test suite** (see `TESTING.md`'s recommended starting point) —
+   this session made several small, judgment-call fixes (the eslint-disable justifications,
+   the idempotency check) that would benefit from regression coverage.
 
 ## Verification required before continuing
 
-- Run `git status` at the start of any new session. As of this checkpoint it should be
-  **clean**, with `HEAD` at `071f6a3` — if it shows anything else (uncommitted files,
-  application code changes, a different `HEAD`), stop and investigate before assuming this
-  file's description still matches reality.
-- Confirm the Supabase migration state matches `supabase/migrations/` — i.e., that migration
-  `005_category_group.sql` (the latest) has actually been run against production (Verified at
-  audit time via a direct query — but re-verify if resuming much later, in case another
-  session or the user made further out-of-band SQL changes).
-- Re-run `npm run build` and `npx tsc --noEmit` at the start of any new session to confirm the
-  "currently passes" status in this file is still accurate.
+- Run `git status` and `git log --oneline -3` at the start of any new session. Expect: clean
+  tree, `HEAD` at `18200e7`.
+- Re-run `npm run build`, `npx tsc --noEmit`, and `npm run lint` to confirm the "all pass"
+  status in this file is still accurate — don't assume it without checking.
+- If resuming much later, re-verify Supabase migration state
+  (`supabase/migrations/005_category_group.sql` should be the latest applied) and re-check the
+  live row counts, since real usage continues independent of code changes.

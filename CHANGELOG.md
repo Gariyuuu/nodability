@@ -9,6 +9,21 @@ hand-maintained, user-facing summary — the two are related but not identical; 
 No CHANGELOG.md existed in this repository before this entry — this file is new, not a
 rewrite of prior history. No dates or versions below are invented.
 
+## 2026-08-06 — Fixed every open bug and tech-debt item (`18200e7`)
+
+Per explicit user instruction to finish all outstanding work: fixed all 9 `npm run lint`
+errors (`npm run lint` now exits 0 — genuine structural fix for `ThemeProvider.tsx`'s
+localStorage hydration, justified suppressions for 3 standard fetch-on-mount patterns, fixed
+an unescaped apostrophe, replaced 4 `any` casts with real types); hardened `/api/chat` with
+proper error handling; made template application idempotent; removed the unused
+`is_recall_query` field; deleted unused scaffold assets; self-hosted the 4 theme background
+photos (`public/theme/`) instead of hotlinking Unsplash — which surfaced and required fixing
+a new `proxy.ts` auth-gate gap for the new static paths; improved life-area-grouping
+discoverability; resolved the `brace-expansion` `npm audit` advisory. 3 `npm audit` advisories
+remain, deliberately deferred (would require bumping `next` past the pinned version). Full
+detail in `CLAUDE.md`'s Known Issues section and `TASKS.md`. Deployed to production and
+verified live.
+
 ## 2026-08-06 — Documentation handoff audit + real photo backgrounds / calendar views
 
 - **Documentation handoff audit** (this entry): performed a full repository audit (source,

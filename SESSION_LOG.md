@@ -333,3 +333,81 @@ this file existed; dates are taken from `git log` where possible.
   instructed. Beyond that, `BUG-001`/`BUG-002` remain the top of the product task queue.
 - **Recommended next action:** Ask the user whether to push `071f6a3` to `origin/main`, or
   proceed directly to `BUG-001`/`BUG-002` if the user has other priorities in mind.
+
+---
+
+## Session: 2026-08-06 — Fix every open bug and TODO in one pass
+
+- **Account/agent:** unknown (not to be inferred/invented)
+- **Goal:** The user replied to the previous session's status update ("so its al fixed") with
+  an explicit instruction to finish literally everything: "finish all of the work every
+  singel task inclduign bug next part utnil everything i asked for is done." Interpreted as:
+  fix every open item in `TASKS.md` (`BUG-001`, `BUG-002`, `TODO-001` through `TODO-007`),
+  verify, commit, and deploy.
+- **Files inspected:** `TASKS.md` for the exact list; re-read `app/ideas/page.tsx`,
+  `app/week/page.tsx`, `components/TaskBoard.tsx`, `components/theme/ThemeProvider.tsx`,
+  `components/ChatPanel.tsx`, `lib/tasks.ts`, `app/api/chat/route.ts`,
+  `app/api/templates/route.ts`, `lib/categorize.ts`, `lib/prompts.ts`, `components/Sidebar.tsx`,
+  `app/globals.css`, `proxy.ts` before editing each.
+- **Files changed:**
+  - `components/theme/ThemeProvider.tsx` — replaced the localStorage-hydration effect with
+    guarded lazy `useState` initializers (`readStoredMode`/`readStoredPalette`).
+  - `app/ideas/page.tsx`, `app/week/page.tsx`, `components/TaskBoard.tsx` — added justified
+    `eslint-disable-next-line react-hooks/set-state-in-effect` with explanatory comments.
+  - `components/ChatPanel.tsx` — fixed the unescaped apostrophe; added a `res.ok` check
+    before reading the chat response as a stream.
+  - `lib/tasks.ts` — replaced 4 `: any` casts with real interfaces (`TaskWithCategoryRow`,
+    `TaskDeletionMatchRow`); added `taskExistsWithTitle` for template idempotency.
+  - `app/api/chat/route.ts` — wrapped the route body in try/catch; validates JSON parsing
+    too; returns a clean `500` text response on any failure.
+  - `app/api/templates/route.ts` — checks `taskExistsWithTitle` before each insert.
+  - `lib/categorize.ts`, `lib/prompts.ts` — removed the unused `is_recall_query` field from
+    the extraction tool schema, `ExtractionResult` interface, and the instructions prompt.
+  - Deleted `public/file.svg`, `public/globe.svg`, `public/next.svg`, `public/vercel.svg`,
+    `public/window.svg`, `app/favicon.ico`.
+  - Added `public/theme/{slate,ocean,sunset,forest}.jpg` (downloaded from the same Unsplash
+    photo IDs already in use, 1600px/q55) and `public/theme/SOURCES.md`; updated
+    `app/globals.css`'s 8 `--bg-art` values to reference local `/theme/*.jpg` paths instead
+    of hotlinked Unsplash CDN URLs.
+  - `proxy.ts` — broadened the auth-gate matcher to exclude any path ending in a common
+    static-asset extension, instead of enumerating individual paths.
+  - `components/Sidebar.tsx` — added a visible hint line about the group-cycling dot; made
+    the dot larger and bordered.
+  - `package-lock.json` — updated via `npm audit fix` (brace-expansion only, no `next` bump).
+  - Updated `CLAUDE.md`, `PROJECT_STATE.md`, `TASKS.md`, `HANDOFF.md` to reflect all of the
+    above as resolved. This `SESSION_LOG.md` entry.
+- **Commands run:** `npx tsc --noEmit`, `npm run lint`, `npm run build` (repeated after each
+  major change, and once more at the end — all exit 0 on the final pass); local `npm run dev`
+  + `curl` to catch the `/theme/*.jpg` auth-gate bug before it reached production; `npm audit`
+  / `npm audit fix`; `git add` (explicit file lists, not `-A`) + `git commit`; `vercel --prod
+  --yes`; live `curl` smoke tests against every key route; a Playwright screenshot of the live
+  `/login` page confirming the self-hosted background renders.
+- **Tests run:** No automated tests exist. All verification was `tsc`/`lint`/`build` plus
+  manual local and live curl/screenshot checks, as above.
+- **Results:** `npx tsc --noEmit` exit 0, `npm run lint` exit 0 (down from 9 errors), `npm run
+  build` exit 0 (15 routes). Live deployment verified: `/login` 200, `/icon`/`/apple-icon`/all
+  4 `/theme/*.jpg` 200 with correct content types, protected routes 307/401 as expected.
+  `npm audit`: 3 high-severity advisories remain (down from 4), all transitive via `next`,
+  deliberately unresolved.
+- **Decisions made:**
+  - Used a justified `eslint-disable-next-line` for the 3 fetch-on-mount lint errors rather
+    than a structural data-fetching-library migration — judged disproportionate risk/effort
+    for this app given no test suite exists to catch regressions from such a rewrite.
+  - Did not run `npm audit fix --force` (would bump `next` to `16.3.0`, outside the pinned
+    range) — recorded as `ISSUE-006`/deferred rather than silently skipped or silently done.
+  - Treated life-area-grouping discoverability as an improvement, not a guaranteed fix —
+    documented that real adoption still needs to be observed, not assumed.
+- **Problems found:** A new bug was introduced and caught within this same session: after
+  self-hosting the theme photos (`TODO-003`), a local `curl` check against the dev server
+  showed `/theme/*.jpg` returning `307` (redirected to `/login`) instead of `200` — the
+  `proxy.ts` auth gate didn't exclude the new static path, exactly the same bug class as an
+  earlier `/icon` issue from a prior session. Caught before deploying via local verification,
+  fixed by broadening the matcher, re-verified locally, then confirmed live post-deploy.
+- **Work completed:** Every item in `TASKS.md`'s `BUG-*`/`TODO-*` list. Full detail in
+  `PROJECT_STATE.md` and `TASKS.md`'s "Recently completed" section.
+- **Work remaining:** Nothing tracked as an active task. `ISSUE-006` (3 remaining `npm audit`
+  advisories) is deliberately deferred, not forgotten. Whether to `git push` the accumulated
+  local commits is still an open question for the user.
+- **Recommended next action:** Ask the user whether to push, and otherwise consider this
+  handoff arc complete — the next real work item should come from the user's next request,
+  not from this session's own backlog (which is now empty).

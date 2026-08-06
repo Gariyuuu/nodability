@@ -75,22 +75,24 @@ run**. Verified via `node_modules/next/dist/docs/01-app/03-api-reference/03-file
 ## Current status
 
 - **Current stable state:** Deployed and working. Build succeeds (`npm run build`, exit 0).
-  TypeScript type-checks clean (`npx tsc --noEmit`, exit 0). ESLint currently **fails** with
-  9 errors (exit 1) — see [Known issues](#known-issues). This has evidently never blocked
-  deploys since nothing runs lint in CI/build.
-- **Latest completed milestone:** A large feature pass adding real per-user authentication,
-  theming (4 palettes × light/dark, with real Unsplash photo backgrounds), a Week/Month/Year
-  calendar with Academic/Personal/Work/Other grouping, a starter-templates page, a changelog
-  page, and chat suggestion chips. See `git log` and [CHANGELOG.md](CHANGELOG.md) for the
-  full commit-by-commit history.
-- **Current active task:** None. `DOC-001` (see [TASKS.md](TASKS.md)) — committing this
-  documentation set — is complete (`071f6a3`, not yet pushed). No product/feature task is in
-  progress. See [PROJECT_STATE.md](PROJECT_STATE.md) for the exact stopping point.
-- **Highest-priority next task:** Fix the 9 ESLint
-  errors (4× `react-hooks/set-state-in-effect`,
-  1× `react/no-unescaped-entities`, 4× `@typescript-eslint/no-explicit-any`) — see
-  [TASKS.md](TASKS.md) task `BUG-001`. None of these are believed to cause user-visible
-  breakage, but they represent the only "red" signal in the repo.
+  TypeScript type-checks clean (`npx tsc --noEmit`, exit 0). **ESLint now passes cleanly too**
+  (`npm run lint`, exit 0) — all 9 original errors were fixed, see [Known issues](#known-issues).
+- **Latest completed milestone:** A follow-up session fixed every tracked bug/tech-debt item
+  from the documentation audit in one pass (commit `18200e7`): all 9 lint errors, `/api/chat`
+  error handling, template re-application duplicating tasks, the unused `is_recall_query`
+  field, unused scaffold assets, self-hosted theme background photos (was hotlinked from
+  Unsplash), improved life-area-grouping discoverability, and the safe half of the `npm audit`
+  findings. Before that: a large feature pass adding real per-user authentication, theming (4
+  palettes × light/dark), a Week/Month/Year calendar with Academic/Personal/Work/Other
+  grouping, a starter-templates page, a changelog page, and chat suggestion chips. See
+  `git log` and [CHANGELOG.md](CHANGELOG.md) for the full commit-by-commit history.
+- **Current active task:** None. Every tracked task (`DOC-001`, `BUG-001`, `BUG-002`,
+  `TODO-001` through `TODO-007`) is complete. See [PROJECT_STATE.md](PROJECT_STATE.md) for the
+  exact stopping point and [TASKS.md](TASKS.md) for what's left (only the deliberately-deferred
+  `next` version bump, ISSUE-006).
+- **Highest-priority next task:** None urgent. The only open item is ISSUE-006 (3 remaining
+  `npm audit` advisories requiring a `next` version bump past the pinned range) — deliberately
+  deferred, not a "next task to just do."
 - **Features currently under construction:** None. Every feature that has UI for it also has
   working backend/DB wiring (see [FEATURES.md](FEATURES.md) for the per-feature verification
   table) — this is not a repo with half-built UI shells.
@@ -198,7 +200,7 @@ supabase/
   migrations/002..005.sql   Forward-only migrations, run manually in order
 scripts/
   create-users.mjs          One-off admin script to provision the 2 allowed accounts
-public/                     Unused Create-Next-App default SVGs (Inferred dead assets — see FILE_MAP.md)
+public/theme/                Self-hosted theme background photos (slate/ocean/sunset/forest.jpg) + SOURCES.md
 proxy.ts                    Next.js 16 request gate (session refresh + auth redirect)
 ```
 
@@ -288,10 +290,11 @@ Full detail in [UI_SYSTEM.md](UI_SYSTEM.md). Key facts every session should know
   variable blocks in `globals.css`). Palette + mode are chosen via `components/theme/ThemeToggle.tsx`
   and persisted to `localStorage` (`lib/theme.ts` constants `THEME_STORAGE_KEY` /
   `PALETTE_STORAGE_KEY`).
-- **Backgrounds are real hotlinked photos** from `images.unsplash.com` (one specific photo ID
-  per palette, same photo for light/dark, darkened/lightened via a CSS scrim gradient layered
-  on top). These are **external URLs, not local assets** — see
-  [DO NOT CHANGE WITHOUT REVIEW](#do-not-change-without-review).
+- **Backgrounds are real photos, self-hosted** at `public/theme/{slate,ocean,sunset,forest}.jpg`
+  (one per palette, same photo for light/dark, darkened/lightened via a CSS scrim gradient
+  layered on top). Originally sourced from Unsplash and hotlinked directly from
+  `images.unsplash.com` — downloaded and self-hosted instead as of commit `18200e7` for
+  durability (see `public/theme/SOURCES.md` for original photo IDs/license).
 - **No-flash-of-wrong-theme script:** an inline `<script>` in `app/layout.tsx`'s `<head>`
   (string built in `lib/theme.ts` as `NO_FLASH_SCRIPT`) reads `localStorage` and sets
   `data-theme`/`data-palette` on `<html>` before first paint. Removing this reintroduces a
@@ -394,8 +397,9 @@ Full detail with request/response shapes in [API_REFERENCE.md](API_REFERENCE.md)
   `GET/POST/DELETE /api/ideas`, `POST /api/templates`, `POST /api/chat`, `GET /auth/callback`.
   All require an authenticated session except `/auth/callback` itself.
 - **External APIs:** Anthropic Claude API (no sandbox/test mode used — real API key, real
-  billing on every call), Supabase (Postgres + Auth REST API), Unsplash CDN (hotlinked image
-  URLs only, no Unsplash API key or account — see [UI_SYSTEM.md](UI_SYSTEM.md)).
+  billing on every call), Supabase (Postgres + Auth REST API). Theme background photos were
+  originally hotlinked from Unsplash's CDN but are now self-hosted (`public/theme/`) — no
+  external image dependency remains at runtime.
 - **Webhooks:** None.
 - **Rate limits:** None implemented by this app. Supabase's own auth-email rate limit applies
   to magic-link sends (has been hit and self-resolved during development — see
@@ -442,82 +446,93 @@ Full detail in [DEPLOYMENT.md](DEPLOYMENT.md). Headline facts:
 
 ## Known issues
 
-### ISSUE-001 — ESLint fails with 9 errors
-- **Severity:** Low (does not block build or deploy; purely a lint-only signal)
-- **Status:** Open, unaddressed
-- **Affected files:** `app/ideas/page.tsx:27`, `app/week/page.tsx:32`,
-  `components/TaskBoard.tsx:35`, `components/theme/ThemeProvider.tsx:40` (all
-  `react-hooks/set-state-in-effect`); `components/ChatPanel.tsx:79`
-  (`react/no-unescaped-entities`, an apostrophe in "you've"); `lib/tasks.ts:105,235,236,251`
-  (`@typescript-eslint/no-explicit-any`).
-- **Reproduction:** `npm run lint` — exit code 1.
-- **Suspected cause:** The `set-state-in-effect` errors are all the standard "fetch on mount"
-  pattern (`useEffect(() => { load(); }, [deps])` where `load` calls `setState`) — a newer,
-  stricter rule in `eslint-config-next` 16 flags this even though it is a common, functionally
-  correct pattern. The `no-explicit-any` errors are from typing raw Supabase join-row shapes.
-- **Attempted fixes:** None yet.
-- **Recommended next investigation:** For the effect errors, either wrap the fetch in a
-  named async function called from an event handler pattern the rule accepts, or scope-check
-  whether disabling this specific rule project-wide is more appropriate than restructuring 4
-  components. For the `any` errors, define a proper Supabase join-result type instead of
-  `any`. See `TASKS.md` task `BUG-001`.
-- **Workaround:** None needed — lint is not gating anything currently.
+All 5 issues originally found during the 2026-08-06 documentation audit were fixed in a
+follow-up session the same day (commit `18200e7`). Kept below, marked **Resolved**, so the
+reasoning and file locations stay available — don't delete resolved issues, since the "why"
+is often still useful context for related future work.
 
-### ISSUE-002 — `/api/chat` has no error handling past the auth check
-- **Severity:** Medium (real user-facing failure mode, not yet observed/reported by the user
-  but logically certain from the code)
-- **Status:** Open, unaddressed
-- **Affected files:** `app/api/chat/route.ts` (lines 26–141)
-- **Reproduction (inferred, not manually triggered):** Any thrown error after the
-  `requireUserId()` check — e.g. Haiku failing to return the forced `extract_tasks` tool call
-  (`lib/categorize.ts:129`, `throw new Error(...)`), a malformed request body, or any Supabase
-  write failure — becomes an unhandled promise rejection. Next.js converts this to a bare 500
-  response. `components/ChatPanel.tsx`'s `fetch()` does not check `res.ok` before reading the
-  response body as a stream, so the error page's raw text would be rendered into the chat
-  bubble as if it were the assistant's reply, instead of showing the intended "Something went
-  wrong reaching the assistant" message (that catch block only fires on a *network*-level
-  fetch failure, not an HTTP error status).
-- **Suspected cause:** Inconsistency with the try/catch pattern used in every other API route
-  (`app/api/tasks/route.ts`, `app/api/ideas/route.ts`, `app/api/categories/route.ts`,
-  `app/api/templates/route.ts`) — the chat route was written first and never retrofitted with
-  the same defensiveness.
-- **Recommended fix:** Wrap the route body in try/catch, return a proper JSON/text error
-  response with a non-200 status, and update `ChatPanel.tsx` to check `res.ok` before reading
-  the stream. See `TASKS.md` task `BUG-002`.
-- **Workaround:** None — has not caused a reported incident yet, but is unverified/unmitigated.
+### ISSUE-001 — ESLint failed with 9 errors — **Resolved**
+- **Affected files:** `app/ideas/page.tsx`, `app/week/page.tsx`, `components/TaskBoard.tsx`,
+  `components/theme/ThemeProvider.tsx`, `components/ChatPanel.tsx`, `lib/tasks.ts`.
+- **Fix applied:** `ThemeProvider.tsx` got a genuine structural fix — the localStorage-read
+  effect was replaced with guarded lazy `useState` initializers (`readStoredMode`/
+  `readStoredPalette`, falling back to defaults when `typeof window === "undefined"`), which
+  eliminates the extra post-mount render entirely rather than just satisfying the linter. The
+  3 fetch-on-mount cases (`app/ideas/page.tsx`, `app/week/page.tsx`,
+  `components/TaskBoard.tsx`) each got a justified
+  `// eslint-disable-next-line react-hooks/set-state-in-effect` with an inline comment — this
+  is a standard, functionally-correct pattern the rule is simply stricter about than
+  warranted here; a full data-fetching-library migration (SWR/React Query/Suspense) was
+  judged disproportionate for this app's scale. The unescaped apostrophe in `ChatPanel.tsx`
+  was fixed directly (`&apos;`). The 4 `: any` casts in `lib/tasks.ts` were replaced with two
+  real local interfaces (`TaskWithCategoryRow`, `TaskDeletionMatchRow`) matching each query's
+  actual `select()` shape.
+- **Verified:** `npm run lint` exits 0.
 
-### ISSUE-003 — Life-area grouping feature is built but unused in production data
-- **Severity:** Low (not a bug, a discoverability/UX gap)
-- **Status:** Open
-- **Affected files:** `components/Sidebar.tsx` (the colored dot), `lib/groups.ts`
-- **Detail:** All 3 live categories currently have `group_name = 'other'` (Verified via direct
-  DB query at audit time) — meaning the two real users have never used the group-cycling dot,
-  likely because it's a small unlabeled colored dot with only a hover tooltip. The
-  calendar's group filter therefore currently shows everything under "Other" in practice.
-- **Recommended next step:** Either make the control more discoverable (a label, not just a
-  dot) or reconsider whether manual tagging is the right UX for this feature.
+### ISSUE-002 — `/api/chat` had no error handling past the auth check — **Resolved**
+- **Affected files:** `app/api/chat/route.ts`, `components/ChatPanel.tsx`.
+- **Fix applied:** The route body (from message validation through building the Sonnet
+  stream) is now wrapped in try/catch; any failure (Haiku extraction, Supabase writes,
+  malformed JSON body) returns a clean `500` plain-text response instead of an unhandled
+  framework error. `ChatPanel.tsx`'s `send()` now checks `res.ok` before treating the
+  response as a stream to read, so a failed request shows the intended friendly error message
+  instead of rendering raw error text into the chat bubble.
+- **Verified:** `npx tsc --noEmit`, `npm run build`, `npm run lint` all pass; not
+  independently re-tested against a live forced-failure scenario (e.g. a temporarily invalid
+  `ANTHROPIC_API_KEY`) after deploy — logically verified by code review, same confidence
+  level as the original finding.
 
-### ISSUE-004 — Unsplash-hotlinked theme backgrounds are an unmanaged external dependency
-- **Severity:** Low
-- **Status:** Open, accepted risk (documented, not yet mitigated)
-- **Affected files:** `app/globals.css` (`--bg-art` values reference
-  `https://images.unsplash.com/photo-<id>` URLs directly)
-- **Detail:** If Unsplash ever removes/rotates these specific photo IDs, the background
-  silently degrades to just the flat scrim color (no broken-image icon, since it's a CSS
-  `background-image`, but the "real photo" effect disappears without any error or fallback).
-  No local copy of these images exists in `public/`.
-- **Recommended fix:** Consider self-hosting the 4 chosen images in `public/` instead of
-  hotlinking, for durability.
+### ISSUE-003 — Life-area grouping feature was unused in production data — **Improved, not fully resolved**
+- **Affected files:** `components/Sidebar.tsx`, `lib/groups.ts`.
+- **Fix applied:** The group-cycling dot is now larger, bordered, and accompanied by a short
+  visible hint line ("Click the dot to tag a category Academic/Personal/Work/Other...") under
+  the Categories heading, instead of relying solely on a hover tooltip.
+- **Status:** This is a discoverability improvement, not a guarantee of adoption — whether
+  the two real users actually start using it is something only real usage over time can
+  confirm. Re-check the live `categories.group_name` values in a future session rather than
+  assuming this fix "worked."
 
-### ISSUE-005 — Templates can be applied more than once, duplicating tasks
-- **Severity:** Low
-- **Status:** Open
-- **Affected files:** `app/api/templates/route.ts`, `lib/templates.ts`
-- **Detail:** `getOrCreateCategory` is idempotent (won't duplicate categories), but
-  `insertTask` always inserts — clicking "Use this template" twice on `/templates` creates two
-  copies of that template's example tasks.
-- **Recommended fix:** Either disable the button after first use per session, or check for an
-  existing task with the same title/category before inserting.
+### ISSUE-004 — Unsplash-hotlinked theme backgrounds — **Resolved**
+- **Affected files:** `app/globals.css`, `public/theme/*.jpg` (new), `public/theme/SOURCES.md`
+  (new).
+- **Fix applied:** All 4 palette background photos are now downloaded and self-hosted at
+  `public/theme/{slate,ocean,sunset,forest}.jpg` (1600px wide, quality 55 — chosen for file
+  size since they render behind an opacity scrim anyway) and referenced as local `/theme/*.jpg`
+  paths instead of hotlinked Unsplash CDN URLs. `public/theme/SOURCES.md` records the original
+  Unsplash photo IDs/license for provenance.
+- **A new bug was introduced and fixed in the same session:** `proxy.ts`'s auth-gate matcher
+  didn't exclude `/theme/*`, so the new local images were being redirected to `/login` for
+  logged-out visitors — the exact same class of bug as the earlier `/icon` issue. Fixed by
+  broadening the matcher to exclude any path ending in a common static-asset extension
+  (`.svg`, `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.ico`, `.css`, `.js`, `.txt`, `.md`)
+  instead of enumerating paths one at a time — see `proxy.ts`'s comment. **If you add a new
+  static asset type to `public/` that doesn't end in one of those extensions, add it to this
+  list, or it will silently 404-via-redirect for logged-out visitors.**
+- **Verified:** Live `curl` checks confirm all 4 images return `200 image/jpeg`; a Playwright
+  screenshot of the live `/login` page confirms the background renders correctly.
+
+### ISSUE-005 — Templates could be applied more than once, duplicating tasks — **Resolved**
+- **Affected files:** `app/api/templates/route.ts`, `lib/tasks.ts` (new
+  `taskExistsWithTitle` helper).
+- **Fix applied:** Before inserting each template task, the route now checks whether a task
+  with that exact title already exists in that category for that user, and skips it if so.
+  Re-applying the same template (or applying it after already doing an example task
+  yourself) no longer creates duplicates.
+
+## Remaining known issue (not from the original 5, still open)
+
+### ISSUE-006 — 3 of 4 `npm audit` advisories remain, deliberately unresolved
+- **Severity:** Low (build-tooling-related, not runtime-request-path — see `SECURITY.md`)
+- **Status:** Open, deliberately deferred
+- **Detail:** `npm audit fix` (no `--force`) was run, resolving the `brace-expansion` DoS
+  advisory. The other 3 (`postcss`, `sharp`, both transitive via `next`) require
+  `npm audit fix --force`, which would bump `next` to `16.3.0` — outside the currently pinned
+  `16.2.11`. Not applied, per this repo's "don't upgrade dependencies without deliberate
+  review" rule; a framework version bump on a live app with real user data and no test suite
+  warrants its own dedicated review pass, not a drive-by fix bundled with unrelated work.
+- **Recommended next step:** When there's time to properly test a Next.js upgrade (ideally
+  after `TESTING.md`'s test-framework gap is addressed), run `npm audit fix --force`, then
+  run the full manual smoke-test checklist in `TESTING.md` before deploying.
 
 ---
 
@@ -536,9 +551,12 @@ Full detail in [DEPLOYMENT.md](DEPLOYMENT.md). Headline facts:
   site is also re-audited.
 - **`proxy.ts`** — the auth gate. Changing its `matcher` config or `PUBLIC_PATHS` list can
   either lock out all users (if a needed public path is removed) or expose protected data (if
-  a path is wrongly added to the public list). `/icon` and `/apple-icon` must stay excluded or
-  the favicon breaks for logged-out visitors (this was an actual bug introduced and fixed
-  during this session).
+  a path is wrongly added to the public list). `/icon`, `/apple-icon`, and any static file
+  under `public/` (matched by extension — `.svg|.png|.jpg|.jpeg|.gif|.webp|.ico|.css|.js|.txt|.md`)
+  must stay excluded or that asset breaks for logged-out visitors — this exact bug has
+  happened twice now (once for `/icon`, once for the new `/theme/*.jpg` background images),
+  so if you add a new `public/` asset type with a different extension, add it to the matcher's
+  exclusion regex too.
 - **`app/api/*/route.ts` auth pattern** — every route must call `requireUserId()` and scope
   every DB call by the returned `userId`. Skipping this on a new route would leak one user's
   data to the other.

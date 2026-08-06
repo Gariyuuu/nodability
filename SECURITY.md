@@ -143,11 +143,10 @@ generic message if this app's threat model ever changes.
 ## Dependency concerns
 
 - No automated dependency scanning (no Dependabot config found, no `npm audit` run as part of
-  any script). Ran `npm audit` during this audit — **4 high-severity advisories, all
+  any script). `npm audit` originally found **4 high-severity advisories**; `npm audit fix`
+  (no `--force`) was run in a follow-up session, resolving 1 of them. **3 remain, all
   transitive, all build-tooling-related rather than runtime-request-path code:**
-  1. `brace-expansion` (≤1.1.17 / 4.0.0–5.0.8) — DoS via unbounded expansion, pulled in
-     transitively by `@typescript-eslint/typescript-estree` and elsewhere. Fix available via
-     `npm audit fix` (no breaking range change needed).
+  1. ~~`brace-expansion`~~ — **Resolved** via `npm audit fix`.
   2. `postcss` (≤8.5.22, via `next`'s own bundled copy) — XSS in CSS stringify output +
      source-map path-traversal/arbitrary-file-read advisories. This app doesn't accept
      user-controlled CSS or source maps at runtime, so exposure is low, but it's still a real
@@ -156,32 +155,34 @@ generic message if this app's threat model ever changes.
      `next/image` (Verified: no `next/image` import anywhere in `app/`/`components/`), so
      `sharp`'s image-processing code path is not reachable at runtime — exposure is
      effectively build-time/dev-tooling only.
-  - **`npm audit fix` alone only resolves the `brace-expansion` issue.** Resolving `postcss`/
-    `sharp` requires `npm audit fix --force`, which **would upgrade `next` to 16.3.0** — outside
-    the currently pinned `16.2.11`. Per this project's "do not upgrade dependencies without
-    review" rule, this was **not** applied during this audit; it's recorded here as a decision
-    for a future session to make deliberately (see `TASKS.md`).
+  - **Resolving `postcss`/`sharp` requires `npm audit fix --force`, which would upgrade
+    `next` to 16.3.0** — outside the currently pinned `16.2.11`. Per this project's "do not
+    upgrade dependencies without review" rule, this was **not** applied; tracked as
+    `ISSUE-006` in `CLAUDE.md` / deferred in `TASKS.md` for a future session to address
+    deliberately, ideally after a test suite exists to verify the upgrade doesn't regress
+    anything.
 - No lockfile-integrity CI check exists.
 
 ## Production security gaps (summary)
 
 1. No rate limiting (`/api/chat` cost exposure, auth email rate limit is Supabase's own).
-2. No automated dependency vulnerability scanning; `npm audit` has flagged issues that were
-   not investigated as part of this audit (out of scope — see Verification performed in the
-   final handoff report).
+2. No automated dependency vulnerability scanning; 3 `npm audit` advisories remain
+   (deliberately deferred — see Dependency concerns above / `ISSUE-006` in `CLAUDE.md`).
 3. No length caps on user-submitted text fields.
 4. Single point-of-failure authorization model (service-role + manual filtering, no automated
    check) — see Authorization boundaries above.
 5. No staging/dev database separation — Preview deployments on Vercel point at the same
    production Supabase project (see `DEPLOYMENT.md`).
 
+`/api/chat`'s missing error handling (previously gap #1 in this list) was **fixed** — the
+route now wraps its body in try/catch and returns a clean error response instead of an
+unhandled 500 (closes the minor information-disclosure-via-error-text surface too).
+
 ## Recommended fixes (priority order, Inferred — not requested by the user, offered as
 professional judgment)
 
-1. Wrap `/api/chat` in proper error handling (already tracked as `TASKS.md` BUG-002 for
-   functional reasons; also closes a minor information-disclosure-via-error-text surface).
-2. Run `npm audit` and address the 4 flagged high-severity issues, or explicitly document why
-   they're accepted.
-3. Add basic rate limiting to `/api/chat` (even a simple in-memory or Vercel KV-based
+1. Add basic rate limiting to `/api/chat` (even a simple in-memory or Vercel KV-based
    per-user throttle would materially reduce cost-exposure risk).
-4. Add server-side length caps on `message`/`content`/`title` fields.
+2. When there's time for a dedicated review pass, address the 3 remaining `npm audit`
+   advisories (`ISSUE-006` — requires a `next` version bump, test thoroughly first).
+3. Add server-side length caps on `message`/`content`/`title` fields.
