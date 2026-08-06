@@ -25,8 +25,8 @@ export default function Sidebar({
   }, [refreshKey]);
 
   return (
-    <nav className="w-48 shrink-0 border-r border-gray-200 pr-4">
-      <h2 className="mb-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+    <nav className="w-48 shrink-0 border-r border-border pr-4">
+      <h2 className="mb-3 text-xs font-semibold text-muted uppercase tracking-wide">
         Categories
       </h2>
       <ul className="space-y-1">
@@ -34,7 +34,7 @@ export default function Sidebar({
           <button
             onClick={() => onSelect(null)}
             className={`block w-full rounded px-2 py-1 text-left text-sm ${
-              selected === null ? "bg-gray-900 text-white" : "text-gray-700 hover:bg-gray-100"
+              selected === null ? "bg-accent text-accent-fg" : "text-fg hover:bg-surface"
             }`}
           >
             All
@@ -45,7 +45,7 @@ export default function Sidebar({
             <button
               onClick={() => onSelect(c.name)}
               className={`block w-full rounded px-2 py-1 text-left text-sm ${
-                selected === c.name ? "bg-gray-900 text-white" : "text-gray-700 hover:bg-gray-100"
+                selected === c.name ? "bg-accent text-accent-fg" : "text-fg hover:bg-surface"
               }`}
             >
               {c.name}

@@ -29,10 +29,10 @@ function LoginForm() {
   };
 
   return (
-    <div className="flex h-screen items-center justify-center bg-white text-gray-900">
+    <div className="flex h-screen items-center justify-center bg-bg text-fg">
       <div className="w-full max-w-sm px-6">
         <h1 className="mb-1 text-lg font-semibold">Nodability</h1>
-        <p className="mb-6 text-sm text-gray-500">Sign in with a magic link.</p>
+        <p className="mb-6 text-sm text-muted">Sign in with a magic link.</p>
 
         {callbackError ? (
           <p className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -41,7 +41,7 @@ function LoginForm() {
         ) : null}
 
         {status === "sent" ? (
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-fg">
             Check <span className="font-medium">{email}</span> for a sign-in link.
           </p>
         ) : (
@@ -52,12 +52,12 @@ function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && sendLink()}
               placeholder="you@example.com"
-              className="mb-3 w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+              className="mb-3 w-full rounded border border-border bg-bg px-3 py-2 text-sm outline-none focus:border-accent"
             />
             <button
               onClick={sendLink}
               disabled={status === "sending" || !email.trim()}
-              className="w-full rounded bg-gray-900 px-4 py-2 text-sm text-white disabled:opacity-50"
+              className="w-full rounded bg-accent px-4 py-2 text-sm text-accent-fg disabled:opacity-50"
             >
               {status === "sending" ? "Sending…" : "Send magic link"}
             </button>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { formatTimeOnly, formatWeekdayLabel } from "@/lib/format";
 import { getCurrentWeekDays, taskFallsOnDay } from "@/lib/week";
+import ThemeToggle from "@/components/theme/ThemeToggle";
 
 interface Task {
   id: string;
@@ -29,10 +30,10 @@ function DayCard({
   onRemove: (task: Task) => void;
 }) {
   return (
-    <div className={`rounded-lg border p-3 ${isToday ? "border-gray-900" : "border-gray-200"}`}>
-      <h3 className="mb-2 text-sm font-semibold text-gray-700">{formatWeekdayLabel(day)}</h3>
+    <div className={`rounded-lg border p-3 ${isToday ? "border-accent" : "border-border"}`}>
+      <h3 className="mb-2 text-sm font-semibold text-fg">{formatWeekdayLabel(day)}</h3>
       {tasks.length === 0 ? (
-        <p className="text-xs text-gray-300">Nothing scheduled</p>
+        <p className="text-xs text-muted">Nothing scheduled</p>
       ) : (
         <ul className="space-y-1">
           {tasks.map((task) => (
@@ -45,22 +46,22 @@ function DayCard({
               />
               <span
                 className={`flex-1 text-sm ${
-                  task.status === "done" ? "line-through text-gray-400" : "text-gray-800"
+                  task.status === "done" ? "line-through text-muted" : "text-fg"
                 }`}
               >
                 {task.title}
                 {task.category_name ? (
-                  <span className="ml-1 text-xs text-gray-400">({task.category_name})</span>
+                  <span className="ml-1 text-xs text-muted">({task.category_name})</span>
                 ) : null}
                 {task.due_time ? (
-                  <span className="ml-1 text-xs text-gray-400">{formatTimeOnly(task.due_time)}</span>
+                  <span className="ml-1 text-xs text-muted">{formatTimeOnly(task.due_time)}</span>
                 ) : null}
               </span>
               <button
                 onClick={() => onRemove(task)}
                 aria-label={`Delete ${task.title}`}
                 title="Delete task"
-                className="rounded px-2 py-1 text-sm font-medium text-gray-500 hover:bg-red-50 hover:text-red-600"
+                className="rounded px-2 py-1 text-sm font-medium text-muted hover:bg-red-50 hover:text-red-600"
               >
                 ✕
               </button>
@@ -112,21 +113,22 @@ export default function WeekPage() {
   const rightDays = weekDays.slice(4); // Fri-Sun
 
   return (
-    <div className="flex h-screen flex-col bg-white text-gray-900">
-      <header className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+    <div className="flex h-screen flex-col bg-bg text-fg">
+      <header className="flex items-center justify-between border-b border-border px-6 py-4">
         <h1 className="text-lg font-semibold">Nodability — This Week</h1>
         <div className="flex items-center gap-4">
-          <Link href="/ideas" className="text-sm text-gray-500 hover:text-gray-900">
+          <Link href="/ideas" className="text-sm text-muted hover:text-fg">
             Ideas
           </Link>
-          <Link href="/" className="text-sm text-gray-500 hover:text-gray-900">
+          <Link href="/" className="text-sm text-muted hover:text-fg">
             Chat + full board →
           </Link>
+          <ThemeToggle />
         </div>
       </header>
       <div className="flex-1 overflow-y-auto p-6">
         {loading ? (
-          <p className="text-sm text-gray-400">Loading…</p>
+          <p className="text-sm text-muted">Loading…</p>
         ) : (
           <div className="mx-auto grid max-w-4xl grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-4">

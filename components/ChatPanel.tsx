@@ -61,10 +61,19 @@ export default function ChatPanel({ onTasksChanged }: { onTasksChanged: () => vo
 
   return (
     <div className="flex h-full flex-col">
+      <div className="mb-3 flex items-center gap-2">
+        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-sm text-accent-fg">
+          🌱
+        </span>
+        <div>
+          <p className="text-sm font-semibold leading-tight">Nodo</p>
+          <p className="text-xs leading-tight text-muted">your task sidekick</p>
+        </div>
+      </div>
       <div className="flex-1 space-y-3 overflow-y-auto pr-1">
         {messages.length === 0 && (
-          <p className="text-sm text-gray-400">
-            Tell me what you have to do — I'll categorize and remember it.
+          <p className="text-sm text-muted">
+            Hey — tell me what you've got going on and I&apos;ll get it organized.
           </p>
         )}
         {messages.map((m, i) => (
@@ -72,8 +81,8 @@ export default function ChatPanel({ onTasksChanged }: { onTasksChanged: () => vo
             key={i}
             className={`max-w-[85%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
               m.role === "user"
-                ? "ml-auto bg-gray-900 text-white"
-                : "bg-gray-100 text-gray-800"
+                ? "ml-auto bg-accent text-accent-fg"
+                : "bg-surface text-fg"
             }`}
           >
             {m.content || (m.role === "assistant" && sending ? "…" : "")}
@@ -86,12 +95,12 @@ export default function ChatPanel({ onTasksChanged }: { onTasksChanged: () => vo
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
           placeholder="e.g. Chem lab report due Friday"
-          className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+          className="flex-1 rounded border border-border bg-bg px-3 py-2 text-sm outline-none focus:border-accent"
         />
         <button
           onClick={send}
           disabled={sending}
-          className="rounded bg-gray-900 px-4 py-2 text-sm text-white disabled:opacity-50"
+          className="rounded bg-accent px-4 py-2 text-sm text-accent-fg disabled:opacity-50"
         >
           Send
         </button>

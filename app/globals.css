@@ -1,26 +1,101 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Palettes: each defines the same 7 semantic roles (bg/fg/surface/border/
+ * muted/accent/accent-fg) for light and dark. `data-palette` picks the hue,
+ * `data-theme` picks light vs dark — set on <html> by ThemeProvider.
+ */
+:root,
+:root[data-palette="slate"] {
+  --bg: #ffffff;
+  --fg: #171717;
+  --surface: #f3f4f6;
+  --border: #e5e7eb;
+  --muted: #6b7280;
+  --accent: #111827;
+  --accent-fg: #ffffff;
+}
+:root[data-palette="slate"][data-theme="dark"] {
+  --bg: #0a0a0a;
+  --fg: #ededed;
+  --surface: #1a1a1a;
+  --border: #2e2e2e;
+  --muted: #9ca3af;
+  --accent: #e5e7eb;
+  --accent-fg: #111827;
+}
+
+:root[data-palette="ocean"] {
+  --bg: #f7fbfd;
+  --fg: #0f2a3d;
+  --surface: #e6f2f7;
+  --border: #cfe4ee;
+  --muted: #5b7d8f;
+  --accent: #0f7ea3;
+  --accent-fg: #ffffff;
+}
+:root[data-palette="ocean"][data-theme="dark"] {
+  --bg: #071a24;
+  --fg: #dff0f7;
+  --surface: #0e2731;
+  --border: #1c3c48;
+  --muted: #7fa4b3;
+  --accent: #37b6dd;
+  --accent-fg: #04222c;
+}
+
+:root[data-palette="sunset"] {
+  --bg: #fff8f4;
+  --fg: #3a1f14;
+  --surface: #fdece0;
+  --border: #f7d9c4;
+  --muted: #9a6b52;
+  --accent: #e2683b;
+  --accent-fg: #ffffff;
+}
+:root[data-palette="sunset"][data-theme="dark"] {
+  --bg: #241109;
+  --fg: #ffe9db;
+  --surface: #331808;
+  --border: #4a2612;
+  --muted: #c99372;
+  --accent: #ff8a5c;
+  --accent-fg: #291005;
+}
+
+:root[data-palette="forest"] {
+  --bg: #f6faf6;
+  --fg: #14261a;
+  --surface: #e8f3e9;
+  --border: #cfe6d2;
+  --muted: #5f7d66;
+  --accent: #2f7d4f;
+  --accent-fg: #ffffff;
+}
+:root[data-palette="forest"][data-theme="dark"] {
+  --bg: #0c1811;
+  --fg: #dcefe0;
+  --surface: #16281c;
+  --border: #24402d;
+  --muted: #85a68e;
+  --accent: #4fae76;
+  --accent-fg: #06130b;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg: var(--bg);
+  --color-fg: var(--fg);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg);
+  color: var(--fg);
   font-family: Arial, Helvetica, sans-serif;
 }

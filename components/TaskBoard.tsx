@@ -57,7 +57,7 @@ export default function TaskBoard({
   };
 
   if (loading) {
-    return <p className="text-sm text-gray-400">Loading tasks…</p>;
+    return <p className="text-sm text-muted">Loading tasks…</p>;
   }
 
   const visibleTasks = filterCategory
@@ -74,8 +74,9 @@ export default function TaskBoard({
 
   if (categoryNames.length === 0) {
     return (
-      <p className="text-sm text-gray-400">
-        No tasks yet — tell the chat what you have to do and it'll show up here.
+      <p className="text-sm text-muted">
+        No tasks yet — tell the chat what you have to do, or grab a template above, and
+        it&apos;ll show up here.
       </p>
     );
   }
@@ -84,7 +85,7 @@ export default function TaskBoard({
     <div className="space-y-6">
       {categoryNames.map((name) => (
         <div key={name}>
-          <h3 className="mb-2 text-sm font-semibold text-gray-500 uppercase tracking-wide">
+          <h3 className="mb-2 text-sm font-semibold text-muted uppercase tracking-wide">
             {name}
           </h3>
           <ul className="space-y-1">
@@ -99,14 +100,14 @@ export default function TaskBoard({
                 <span
                   className={
                     task.status === "done"
-                      ? "line-through text-gray-400"
-                      : "text-gray-800"
+                      ? "line-through text-muted"
+                      : "text-fg"
                   }
                 >
                   {task.title}
                 </span>
                 {formatTaskWhen(task.start_date, task.end_date, task.due_time) && (
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-muted">
                     ({formatTaskWhen(task.start_date, task.end_date, task.due_time)})
                   </span>
                 )}
@@ -114,7 +115,7 @@ export default function TaskBoard({
                   onClick={() => remove(task)}
                   aria-label={`Delete ${task.title}`}
                   title="Delete task"
-                  className="ml-auto rounded px-2 py-1 text-sm font-medium text-gray-500 hover:bg-red-50 hover:text-red-600"
+                  className="ml-auto rounded px-2 py-1 text-sm font-medium text-muted hover:bg-red-50 hover:text-red-600"
                 >
                   ✕
                 </button>
