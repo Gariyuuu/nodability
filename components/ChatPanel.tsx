@@ -7,13 +7,15 @@ interface ChatMessage {
   content: string;
 }
 
+const SUGGESTIONS = ["What do I have today?", "What's due this week?", "What haven't I finished?"];
+
 export default function ChatPanel({ onTasksChanged }: { onTasksChanged: () => void }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
 
-  const send = async () => {
-    const text = input.trim();
+  const send = async (override?: string) => {
+    const text = (override ?? input).trim();
     if (!text || sending) return;
 
     setInput("");
@@ -72,9 +74,22 @@ export default function ChatPanel({ onTasksChanged }: { onTasksChanged: () => vo
       </div>
       <div className="flex-1 space-y-3 overflow-y-auto pr-1">
         {messages.length === 0 && (
-          <p className="text-sm text-muted">
-            Hey — tell me what you've got going on and I&apos;ll get it organized.
-          </p>
+          <div>
+            <p className="mb-3 text-sm text-muted">
+              Hey — tell me what you've got going on and I&apos;ll get it organized.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {SUGGESTIONS.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => send(s)}
+                  className="rounded-full border border-border px-3 py-1 text-xs text-muted hover:border-accent hover:text-fg"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
         {messages.map((m, i) => (
           <div
@@ -98,7 +113,7 @@ export default function ChatPanel({ onTasksChanged }: { onTasksChanged: () => vo
           className="flex-1 rounded border border-border bg-bg px-3 py-2 text-sm outline-none focus:border-accent"
         />
         <button
-          onClick={send}
+          onClick={() => send()}
           disabled={sending}
           className="rounded bg-accent px-4 py-2 text-sm text-accent-fg disabled:opacity-50"
         >

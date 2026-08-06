@@ -6,7 +6,6 @@ import Sidebar from "@/components/Sidebar";
 import TaskBoard from "@/components/TaskBoard";
 import ChatPanel from "@/components/ChatPanel";
 import ThemeToggle from "@/components/theme/ThemeToggle";
-import TemplatePicker from "@/components/TemplatePicker";
 import { signOutAction } from "@/lib/actions";
 
 export default function Home() {
@@ -24,12 +23,14 @@ export default function Home() {
             Ideas
           </Link>
           <Link href="/week" className="text-sm text-muted hover:text-fg">
-            This week →
+            Calendar →
           </Link>
           <Link href="/changelog" className="text-sm text-muted hover:text-fg">
             What&apos;s new
           </Link>
-          <TemplatePicker onApplied={bumpRefresh} />
+          <Link href="/templates" className="text-sm text-muted hover:text-fg">
+            Templates
+          </Link>
           <ThemeToggle />
           <form action={signOutAction}>
             <button type="submit" className="text-sm text-muted hover:text-fg">

@@ -15,9 +15,8 @@
   --accent: #111827;
   --accent-fg: #ffffff;
   --bg-art:
-    radial-gradient(ellipse 700px 500px at 8% -5%, rgba(100, 116, 139, 0.16), transparent 60%),
-    radial-gradient(ellipse 800px 600px at 105% 15%, rgba(148, 163, 184, 0.14), transparent 60%),
-    radial-gradient(ellipse 700px 700px at 50% 115%, rgba(71, 85, 105, 0.1), transparent 60%);
+    linear-gradient(rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.82)),
+    url("https://images.unsplash.com/photo-1541140134513-85a161dc4a00?w=1920&q=70&auto=format&fit=crop");
 }
 :root[data-palette="slate"][data-theme="dark"] {
   --bg: #0a0a0a;
@@ -28,9 +27,8 @@
   --accent: #e5e7eb;
   --accent-fg: #111827;
   --bg-art:
-    radial-gradient(ellipse 700px 500px at 8% -5%, rgba(148, 163, 184, 0.14), transparent 60%),
-    radial-gradient(ellipse 800px 600px at 105% 15%, rgba(100, 116, 139, 0.12), transparent 60%),
-    radial-gradient(ellipse 700px 700px at 50% 115%, rgba(71, 85, 105, 0.16), transparent 60%);
+    linear-gradient(rgba(10, 10, 10, 0.85), rgba(10, 10, 10, 0.85)),
+    url("https://images.unsplash.com/photo-1541140134513-85a161dc4a00?w=1920&q=70&auto=format&fit=crop");
 }
 
 :root[data-palette="ocean"] {
@@ -42,9 +40,8 @@
   --accent: #0f7ea3;
   --accent-fg: #ffffff;
   --bg-art:
-    radial-gradient(ellipse 750px 550px at 5% -5%, rgba(15, 126, 163, 0.18), transparent 60%),
-    radial-gradient(ellipse 800px 600px at 110% 10%, rgba(55, 182, 221, 0.16), transparent 60%),
-    radial-gradient(ellipse 800px 700px at 50% 120%, rgba(20, 100, 130, 0.12), transparent 60%);
+    linear-gradient(rgba(247, 251, 253, 0.8), rgba(247, 251, 253, 0.8)),
+    url("https://images.unsplash.com/photo-1542608974741-76a4c0d4a3b7?w=1920&q=70&auto=format&fit=crop");
 }
 :root[data-palette="ocean"][data-theme="dark"] {
   --bg: #071a24;
@@ -55,9 +52,8 @@
   --accent: #37b6dd;
   --accent-fg: #04222c;
   --bg-art:
-    radial-gradient(ellipse 750px 550px at 5% -5%, rgba(55, 182, 221, 0.16), transparent 60%),
-    radial-gradient(ellipse 800px 600px at 110% 10%, rgba(15, 126, 163, 0.2), transparent 60%),
-    radial-gradient(ellipse 800px 700px at 50% 120%, rgba(10, 60, 80, 0.3), transparent 60%);
+    linear-gradient(rgba(7, 26, 36, 0.85), rgba(7, 26, 36, 0.85)),
+    url("https://images.unsplash.com/photo-1542608974741-76a4c0d4a3b7?w=1920&q=70&auto=format&fit=crop");
 }
 
 :root[data-palette="sunset"] {
@@ -69,9 +65,8 @@
   --accent: #e2683b;
   --accent-fg: #ffffff;
   --bg-art:
-    radial-gradient(ellipse 750px 550px at 8% -5%, rgba(226, 104, 59, 0.18), transparent 60%),
-    radial-gradient(ellipse 800px 600px at 105% 10%, rgba(255, 138, 92, 0.16), transparent 60%),
-    radial-gradient(ellipse 800px 700px at 50% 120%, rgba(199, 90, 140, 0.12), transparent 60%);
+    linear-gradient(rgba(255, 248, 244, 0.8), rgba(255, 248, 244, 0.8)),
+    url("https://images.unsplash.com/photo-1490735891913-40897cdaafd1?w=1920&q=70&auto=format&fit=crop");
 }
 :root[data-palette="sunset"][data-theme="dark"] {
   --bg: #241109;
@@ -82,9 +77,8 @@
   --accent: #ff8a5c;
   --accent-fg: #291005;
   --bg-art:
-    radial-gradient(ellipse 750px 550px at 8% -5%, rgba(255, 138, 92, 0.18), transparent 60%),
-    radial-gradient(ellipse 800px 600px at 105% 10%, rgba(226, 104, 59, 0.16), transparent 60%),
-    radial-gradient(ellipse 800px 700px at 50% 120%, rgba(140, 50, 90, 0.22), transparent 60%);
+    linear-gradient(rgba(36, 17, 9, 0.85), rgba(36, 17, 9, 0.85)),
+    url("https://images.unsplash.com/photo-1490735891913-40897cdaafd1?w=1920&q=70&auto=format&fit=crop");
 }
 
 :root[data-palette="forest"] {
@@ -96,9 +90,8 @@
   --accent: #2f7d4f;
   --accent-fg: #ffffff;
   --bg-art:
-    radial-gradient(ellipse 750px 550px at 8% -5%, rgba(47, 125, 79, 0.18), transparent 60%),
-    radial-gradient(ellipse 800px 600px at 105% 10%, rgba(79, 174, 118, 0.16), transparent 60%),
-    radial-gradient(ellipse 800px 700px at 50% 120%, rgba(120, 150, 60, 0.1), transparent 60%);
+    linear-gradient(rgba(246, 250, 246, 0.8), rgba(246, 250, 246, 0.8)),
+    url("https://images.unsplash.com/photo-1626657171364-4af23203469b?w=1920&q=70&auto=format&fit=crop");
 }
 :root[data-palette="forest"][data-theme="dark"] {
   --bg: #0c1811;
@@ -109,9 +102,8 @@
   --accent: #4fae76;
   --accent-fg: #06130b;
   --bg-art:
-    radial-gradient(ellipse 750px 550px at 8% -5%, rgba(79, 174, 118, 0.16), transparent 60%),
-    radial-gradient(ellipse 800px 600px at 105% 10%, rgba(47, 125, 79, 0.2), transparent 60%),
-    radial-gradient(ellipse 800px 700px at 50% 120%, rgba(60, 110, 40, 0.16), transparent 60%);
+    linear-gradient(rgba(12, 24, 17, 0.85), rgba(12, 24, 17, 0.85)),
+    url("https://images.unsplash.com/photo-1626657171364-4af23203469b?w=1920&q=70&auto=format&fit=crop");
 }
 
 @theme inline {
@@ -144,4 +136,6 @@ body::before {
   z-index: -1;
   background-image: var(--bg-art);
   background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
 }

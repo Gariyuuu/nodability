@@ -1,83 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { formatTimeOnly, formatWeekdayLabel } from "@/lib/format";
-import { getCurrentWeekDays, taskFallsOnDay } from "@/lib/week";
+import { useEffect, useMemo, useState } from "react";
 import ThemeToggle from "@/components/theme/ThemeToggle";
+import WeekView from "@/components/calendar/WeekView";
+import MonthView from "@/components/calendar/MonthView";
+import YearView from "@/components/calendar/YearView";
+import { GROUP_LABELS, GROUP_ORDER } from "@/lib/groups";
+import type { CalendarTask } from "@/lib/calendar";
+import type { CategoryGroup } from "@/lib/tasks";
 
-interface Task {
-  id: string;
-  title: string;
-  category_name: string | null;
-  start_date: string | null;
-  end_date: string | null;
-  due_time: string | null;
-  status: "open" | "done";
-}
+type ViewMode = "week" | "month" | "year";
+type GroupFilter = "all" | CategoryGroup;
 
-function DayCard({
-  day,
-  tasks,
-  isToday,
-  onToggle,
-  onRemove,
-}: {
-  day: string;
-  tasks: Task[];
-  isToday: boolean;
-  onToggle: (task: Task) => void;
-  onRemove: (task: Task) => void;
-}) {
-  return (
-    <div className={`rounded-lg border p-3 ${isToday ? "border-accent" : "border-border"}`}>
-      <h3 className="mb-2 text-sm font-semibold text-fg">{formatWeekdayLabel(day)}</h3>
-      {tasks.length === 0 ? (
-        <p className="text-xs text-muted">Nothing scheduled</p>
-      ) : (
-        <ul className="space-y-1">
-          {tasks.map((task) => (
-            <li key={task.id} className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={task.status === "done"}
-                onChange={() => onToggle(task)}
-                className="h-4 w-4"
-              />
-              <span
-                className={`flex-1 text-sm ${
-                  task.status === "done" ? "line-through text-muted" : "text-fg"
-                }`}
-              >
-                {task.title}
-                {task.category_name ? (
-                  <span className="ml-1 text-xs text-muted">({task.category_name})</span>
-                ) : null}
-                {task.due_time ? (
-                  <span className="ml-1 text-xs text-muted">{formatTimeOnly(task.due_time)}</span>
-                ) : null}
-              </span>
-              <button
-                onClick={() => onRemove(task)}
-                aria-label={`Delete ${task.title}`}
-                title="Delete task"
-                className="rounded px-2 py-1 text-sm font-medium text-muted hover:bg-red-50 hover:text-red-600"
-              >
-                ✕
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-export default function WeekPage() {
-  const [tasks, setTasks] = useState<Task[]>([]);
+export default function CalendarPage() {
+  const [tasks, setTasks] = useState<CalendarTask[]>([]);
   const [loading, setLoading] = useState(true);
-  const [today] = useState(() => new Date().toISOString().slice(0, 10));
-  const [weekDays] = useState(() => getCurrentWeekDays());
+  const [view, setView] = useState<ViewMode>("week");
+  const [groupFilter, setGroupFilter] = useState<GroupFilter>("all");
+  const [monthDate, setMonthDate] = useState(() => new Date());
+  const [year, setYear] = useState(() => new Date().getFullYear());
 
   const load = async () => {
     const res = await fetch("/api/tasks");
@@ -90,7 +32,15 @@ export default function WeekPage() {
     load();
   }, []);
 
-  const toggle = async (task: Task) => {
+  const visibleTasks = useMemo(
+    () =>
+      groupFilter === "all"
+        ? tasks
+        : tasks.filter((t) => t.category_group === groupFilter),
+    [tasks, groupFilter],
+  );
+
+  const toggle = async (task: CalendarTask) => {
     const nextStatus = task.status === "open" ? "done" : "open";
     setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: nextStatus } : t)));
     await fetch("/api/tasks", {
@@ -100,7 +50,7 @@ export default function WeekPage() {
     });
   };
 
-  const remove = async (task: Task) => {
+  const remove = async (task: CalendarTask) => {
     setTasks((prev) => prev.filter((t) => t.id !== task.id));
     await fetch("/api/tasks", {
       method: "DELETE",
@@ -109,13 +59,10 @@ export default function WeekPage() {
     });
   };
 
-  const leftDays = weekDays.slice(0, 4); // Mon-Thu
-  const rightDays = weekDays.slice(4); // Fri-Sun
-
   return (
     <div className="flex h-screen flex-col text-fg">
       <header className="flex items-center justify-between border-b border-border px-6 py-4">
-        <h1 className="text-lg font-semibold">Nodability — This Week</h1>
+        <h1 className="text-lg font-semibold">Nodability — Calendar</h1>
         <div className="flex items-center gap-4">
           <Link href="/ideas" className="text-sm text-muted hover:text-fg">
             Ideas
@@ -126,36 +73,64 @@ export default function WeekPage() {
           <ThemeToggle />
         </div>
       </header>
+      <div className="flex items-center justify-between border-b border-border px-6 py-3">
+        <div className="flex gap-1">
+          {(["week", "month", "year"] as ViewMode[]).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={`rounded px-3 py-1 text-sm capitalize ${
+                view === v ? "bg-accent text-accent-fg" : "text-muted hover:bg-surface"
+              }`}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-1">
+          <button
+            onClick={() => setGroupFilter("all")}
+            className={`rounded px-2 py-1 text-xs ${
+              groupFilter === "all" ? "bg-accent text-accent-fg" : "text-muted hover:bg-surface"
+            }`}
+          >
+            All
+          </button>
+          {GROUP_ORDER.map((g) => (
+            <button
+              key={g}
+              onClick={() => setGroupFilter(g)}
+              className={`rounded px-2 py-1 text-xs ${
+                groupFilter === g ? "bg-accent text-accent-fg" : "text-muted hover:bg-surface"
+              }`}
+            >
+              {GROUP_LABELS[g]}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="flex-1 overflow-y-auto p-6">
         {loading ? (
           <p className="text-sm text-muted">Loading…</p>
+        ) : view === "week" ? (
+          <WeekView tasks={visibleTasks} onToggle={toggle} onRemove={remove} />
+        ) : view === "month" ? (
+          <MonthView
+            monthDate={monthDate}
+            onMonthDateChange={setMonthDate}
+            tasks={visibleTasks}
+            onToggle={toggle}
+          />
         ) : (
-          <div className="mx-auto grid max-w-4xl grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-4">
-              {leftDays.map((day) => (
-                <DayCard
-                  key={day}
-                  day={day}
-                  isToday={day === today}
-                  tasks={tasks.filter((t) => taskFallsOnDay(t, day))}
-                  onToggle={toggle}
-                  onRemove={remove}
-                />
-              ))}
-            </div>
-            <div className="space-y-4">
-              {rightDays.map((day) => (
-                <DayCard
-                  key={day}
-                  day={day}
-                  isToday={day === today}
-                  tasks={tasks.filter((t) => taskFallsOnDay(t, day))}
-                  onToggle={toggle}
-                  onRemove={remove}
-                />
-              ))}
-            </div>
-          </div>
+          <YearView
+            year={year}
+            onYearChange={setYear}
+            tasks={visibleTasks}
+            onSelectMonth={(d) => {
+              setMonthDate(d);
+              setView("month");
+            }}
+          />
         )}
       </div>
     </div>

@@ -1,8 +1,11 @@
 import { supabase } from "./supabase";
 
+export type CategoryGroup = "academic" | "personal" | "work" | "other";
+
 export interface Category {
   id: string;
   name: string;
+  group_name: CategoryGroup;
 }
 
 export interface Task {
@@ -19,11 +22,27 @@ export interface Task {
 export async function listCategories(userId: string): Promise<Category[]> {
   const { data, error } = await supabase
     .from("categories")
-    .select("id, name")
+    .select("id, name, group_name")
     .eq("user_id", userId)
     .order("name");
   if (error) throw error;
   return data ?? [];
+}
+
+export async function updateCategoryGroup(
+  userId: string,
+  categoryId: string,
+  group: CategoryGroup,
+): Promise<Category> {
+  const { data, error } = await supabase
+    .from("categories")
+    .update({ group_name: group })
+    .eq("id", categoryId)
+    .eq("user_id", userId)
+    .select("id, name, group_name")
+    .single();
+  if (error) throw error;
+  return data;
 }
 
 export async function getOrCreateCategory(userId: string, name: string): Promise<Category> {
@@ -31,7 +50,7 @@ export async function getOrCreateCategory(userId: string, name: string): Promise
 
   const { data: existing } = await supabase
     .from("categories")
-    .select("id, name")
+    .select("id, name, group_name")
     .eq("user_id", userId)
     .ilike("name", trimmed)
     .maybeSingle();
@@ -40,7 +59,7 @@ export async function getOrCreateCategory(userId: string, name: string): Promise
   const { data: created, error } = await supabase
     .from("categories")
     .insert({ user_id: userId, name: trimmed })
-    .select("id, name")
+    .select("id, name, group_name")
     .single();
   if (error) throw error;
   return created;
@@ -76,16 +95,17 @@ export async function insertTask(
 
 export async function listTasks(
   userId: string,
-): Promise<(Task & { category_name: string | null })[]> {
+): Promise<(Task & { category_name: string | null; category_group: CategoryGroup | null })[]> {
   const { data, error } = await supabase
     .from("tasks")
-    .select("*, categories(name)")
+    .select("*, categories(name, group_name)")
     .eq("user_id", userId)
     .order("start_date", { ascending: true, nullsFirst: false });
   if (error) throw error;
   return (data ?? []).map((row: any) => ({
     ...row,
     category_name: row.categories?.name ?? null,
+    category_group: row.categories?.group_name ?? null,
   }));
 }
 
