@@ -42,9 +42,13 @@ API routes need to return JSON/text 401s instead of a redirect, since they're ca
 
 ## Secret handling
 
-- `SUPABASE_SERVICE_ROLE_KEY` and `ANTHROPIC_API_KEY` are the two high-sensitivity secrets.
-  Both live only in `.env.local` (gitignored, confirmed via `.gitignore`) and the Vercel
-  dashboard (Production + Preview scopes, confirmed via `vercel env ls`).
+- `SUPABASE_SERVICE_ROLE_KEY` and `AI_PLATFORM_API_KEY` are the two high-sensitivity secrets
+  (the latter replaced `ANTHROPIC_API_KEY` as of commit `b4fb289` — see `DECISIONS.md`
+  DEC-013; the old `ANTHROPIC_API_KEY` value is still present in the Vercel dashboard but
+  unused, dead config). Both live only in `.env.local` (gitignored, confirmed via `.gitignore`)
+  and the Vercel dashboard. `SUPABASE_SERVICE_ROLE_KEY` is confirmed in both Production and
+  Preview scopes; `AI_PLATFORM_API_KEY` is confirmed in **Production only** — it is missing
+  from Preview (Verified `vercel env ls` during the 2026-08-07 checkpoint audit).
 - `lib/supabase.ts` (the service-role client) is imported only by server-only files
   (`lib/tasks.ts`, `lib/ideas.ts`, `lib/messages.ts`, `scripts/create-users.mjs`) — **Verified
   via grep, no `"use client"` file imports it.**
@@ -70,7 +74,7 @@ for exact checks): presence/type checks only (e.g. `status` must be `"open"`/`"d
 `group` must be one of 4 fixed strings, `content`/`message` must be non-empty strings). **No
 length limits** on `message`, `content` (idea text), or `title` (task text) — a very long
 string could be submitted to any of these fields with no server-side cap, which also directly
-affects Anthropic API token cost on the chat path.
+affects token cost against the AI platform on the chat path.
 
 ## Output encoding / XSS
 
@@ -131,8 +135,10 @@ N/A — no webhooks are received by this app.
 
 **None implemented anywhere in application code.** Two distinct exposures:
 1. `/api/chat` has no per-user or per-IP throttling — a scripted client with a valid session
-   could run up real Anthropic API cost quickly (see `CLAUDE.md`'s Anthropic billing note:
-   this is plain pay-per-token billing, not covered by any subscription).
+   could run up cost against the self-hosted AI platform quickly (formerly Anthropic's
+   pay-per-token billing before commit `b4fb289` — see `CLAUDE.md`'s historical Anthropic
+   billing note and `DECISIONS.md` DEC-013; the new platform's own cost model isn't documented
+   in this repo).
 2. Supabase's own built-in auth-email rate limit applies to magic-link requests
    (`signInWithOtp`) — this is Supabase's limit, not something this app configured, and it
    was actually hit during development (see `SESSION_LOG.md`).

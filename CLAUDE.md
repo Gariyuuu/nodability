@@ -77,7 +77,12 @@ run**. Verified via `node_modules/next/dist/docs/01-app/03-api-reference/03-file
 - **Current stable state:** Deployed and working. Build succeeds (`npm run build`, exit 0).
   TypeScript type-checks clean (`npx tsc --noEmit`, exit 0). **ESLint now passes cleanly too**
   (`npm run lint`, exit 0) — all 9 original errors were fixed, see [Known issues](#known-issues).
-- **Latest completed milestone:** A feature session (commit `f8e46ef`) added an
+- **Latest completed milestone:** An AI-provider swap (commit `b4fb289`, confirmed committed,
+  pushed, and live in production as of a 2026-08-07 checkpoint audit) replaced the direct
+  Anthropic API with a self-hosted, OpenAI-compatible model platform
+  (`https://api.gariyuuu.com/v1`) for both the forced-tool-use task-extraction call and the
+  streaming chat reply — see [DECISIONS.md](DECISIONS.md) DEC-013. Before that: a feature
+  session (commit `f8e46ef`) added an
   **Obsidian-style linked notes system** (`/notes` — notes optionally tagged to a category
   "class", linked via `[[Wikilink]]` syntax, with a force-directed graph view) and **custom
   theme background uploads** (an 11th "Custom" palette slot backed by a new public Supabase
@@ -95,11 +100,11 @@ run**. Verified via `node_modules/next/dist/docs/01-app/03-api-reference/03-file
   calendar with Academic/Personal/Work/Other grouping, a starter-templates page, a changelog
   page, and chat suggestion chips. See `git log` and [CHANGELOG.md](CHANGELOG.md) for the full
   commit-by-commit history.
-- **Current active task:** None. Every tracked task, plus the notes-system/custom-image
-  request, is complete. See [PROJECT_STATE.md](PROJECT_STATE.md) for the exact stopping point
-  and
-  [TASKS.md](TASKS.md) for what's left (only the deliberately-deferred `next` version bump,
-  ISSUE-006). Everything through `620fa67` has been pushed to `origin/main`.
+- **Current active task:** None. Every tracked task, including the AI-provider swap and the
+  notes-system/custom-image request, is complete. See [PROJECT_STATE.md](PROJECT_STATE.md) for
+  the exact stopping point and [TASKS.md](TASKS.md) for what's left (only the
+  deliberately-deferred `next` version bump, ISSUE-006). Everything through `b4fb289` has been
+  pushed to `origin/main` and is live in production.
 - **Highest-priority next task:** None urgent. The only open item is ISSUE-006 (3 remaining
   `npm audit` advisories requiring a `next` version bump past the pinned range) — deliberately
   deferred, not a "next task to just do."
@@ -198,7 +203,7 @@ lib/
   actions.ts               Server Action: signOutAction
   tasks.ts, ideas.ts, messages.ts, notes.ts   All DB reads/writes, every function takes userId first
   categorize.ts            Haiku tool-use call that extracts structured tasks from a message
-  anthropic.ts             Anthropic client + model name constants
+  ai-client.ts              OpenAI-compatible client (self-hosted platform) + model constants
   prompts.ts               buildSystemPrompt(personality) + shared rules + extraction instructions
   personalities.ts          5 selectable AI chat characters (Nodo, Rex, Sage, Turbo, Professor Hoot)
   calendar.ts               Month-grid / year-grid date math
@@ -349,12 +354,18 @@ its 4 variable names match `.env.local` exactly). This project uses Next.js's ow
 | `VERCEL_OIDC_TOKEN` | Ambient var auto-injected by Vercel CLI tooling (`vercel dev`) | No — not read by any app code | N/A | N/A | N/A | N/A — not an app secret, don't add to `.env.local.example` |
 
 Live production values for `NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_ANON_KEY`/
-`SUPABASE_SERVICE_ROLE_KEY`/`ANTHROPIC_API_KEY` are set in the Vercel dashboard for **both
-Production and Preview** environments (Verified via `vercel env ls`). No Development-scope
+`SUPABASE_SERVICE_ROLE_KEY` are set in the Vercel dashboard for **both Production and Preview**
+environments (Verified via `vercel env ls`). `AI_PLATFORM_API_KEY` is set for **Production
+only** — it is **missing from Preview** (Verified via `vercel env ls preview` during the
+2026-08-07 checkpoint audit); any Preview deployment's AI calls will fail until it's added
+there too. The old `ANTHROPIC_API_KEY` is still present in both scopes but is dead/unused now
+that `lib/ai-client.ts` reads `AI_PLATFORM_API_KEY` instead — safe to remove, not urgent. No
+Development-scope
 Vercel env vars exist — local dev relies entirely on `.env.local`.
 
 **Never** print, log, or commit the actual values of `SUPABASE_SERVICE_ROLE_KEY` or
-`ANTHROPIC_API_KEY`. `.env.local` is gitignored (Verified in `.gitignore`).
+`AI_PLATFORM_API_KEY` (nor the now-unused but still-live `ANTHROPIC_API_KEY`). `.env.local` is
+gitignored (Verified in `.gitignore`).
 
 ---
 
@@ -414,19 +425,23 @@ Full detail with request/response shapes in [API_REFERENCE.md](API_REFERENCE.md)
 - **Internal API routes:** `GET/PATCH/DELETE /api/tasks`, `GET/PATCH /api/categories`,
   `GET/POST/DELETE /api/ideas`, `POST /api/templates`, `POST /api/chat`, `GET /auth/callback`.
   All require an authenticated session except `/auth/callback` itself.
-- **External APIs:** Anthropic Claude API (no sandbox/test mode used — real API key, real
-  billing on every call), Supabase (Postgres + Auth REST API). Theme background photos were
+- **External APIs:** A self-hosted, OpenAI-compatible AI platform at
+  `https://api.gariyuuu.com/v1` (one exposed model, `"Yuu no Sekai"`, used for both extraction
+  and chat reply — see `DECISIONS.md` DEC-013; this replaced the direct Anthropic Claude API as
+  of commit `b4fb289`), Supabase (Postgres + Auth REST API). Theme background photos were
   originally hotlinked from Unsplash's CDN but are now self-hosted (`public/theme/`) — no
   external image dependency remains at runtime.
 - **Webhooks:** None.
 - **Rate limits:** None implemented by this app. Supabase's own auth-email rate limit applies
   to magic-link sends (has been hit and self-resolved during development — see
   [SESSION_LOG.md](SESSION_LOG.md)). No rate limiting exists on `/api/chat`, meaning nothing
-  stops rapid repeated requests from accumulating Anthropic API cost.
-- **Anthropic billing note (Verified via user Q&A + web research this session, not something
-  the repo itself states):** `ANTHROPIC_API_KEY` billing is **pay-per-token API billing,
-  completely separate from any Claude.ai consumer subscription (Pro/Max)**. A Claude Max
-  subscription does not offset or cover this app's API usage.
+  stops rapid repeated requests from accumulating cost against the AI platform.
+- **Historical Anthropic billing note (kept for context — no longer applicable since the
+  `b4fb289` swap, but the same shape of caveat likely applies to whatever the self-hosted
+  platform bills internally, unverified):** `ANTHROPIC_API_KEY` billing was pay-per-token API
+  billing, completely separate from any Claude.ai consumer subscription (Pro/Max) — a Claude
+  Max subscription did not offset or cover this app's usage back when it called Anthropic
+  directly.
 
 ---
 
@@ -615,7 +630,7 @@ is often still useful context for related future work.
    pre-existing ones.
 10. Update documentation after meaningful changes (see the permanent rules below).
 11. Never claim something works without actually running/verifying it.
-12. Never expose secrets (`SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`) in code, logs, or
+12. Never expose secrets (`SUPABASE_SERVICE_ROLE_KEY`, `AI_PLATFORM_API_KEY`) in code, logs, or
     chat output.
 13. Never modify production data (the live Supabase project — there is no separate
     dev/staging database) without explicit user permission.

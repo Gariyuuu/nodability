@@ -4,18 +4,20 @@ Active execution queue. IDs are stable — reference them in commits/`SESSION_LO
 
 ## Current task
 
-**None active, but uncommitted work exists.** An AI-provider swap (Anthropic Claude API →
-self-hosted OpenAI-compatible platform) was completed and verified this session but
-deliberately **not committed/pushed/deployed** per its task instructions — see
-`PROJECT_STATE.md` and `DECISIONS.md` → DEC-013 for full detail. `git status` will show
-uncommitted changes; commit only if explicitly asked. The only other open item in the repo is
-`ISSUE-006` (deliberately-deferred `npm audit` findings) under "Deferred" — not an active task.
+**None active.** An AI-provider swap (Anthropic Claude API → self-hosted OpenAI-compatible
+platform) was completed, verified, committed (`b4fb289`), pushed, and — per the 2026-08-07
+checkpoint audit's evidence (`vercel env ls`/`vercel inspect`) — is live in production. See
+`PROJECT_STATE.md` and `DECISIONS.md` → DEC-013 for full detail. (Note: this file and
+`PROJECT_STATE.md` previously said this work was uncommitted — that was stale; it was actually
+committed right after those files were written and this checkpoint corrected it.) The only
+other open item in the repo is `ISSUE-006` (deliberately-deferred `npm audit` findings) under
+"Deferred" — not an active task.
 
 ## Next up
 
-Commit and (if requested) deploy the AI-provider swap once reviewed — see `PROJECT_STATE.md`
-→ "Next recommended actions". Otherwise nothing queued; good candidates from "Technical
-debt"/"Testing needed" below, or a new feature request from the user.
+Nothing queued. A real logged-in end-to-end smoke test of `/api/chat` against production (never
+done for the AI-provider swap) is the most valuable next check. Otherwise good candidates from
+"Technical debt"/"Testing needed" below, or a new feature request from the user.
 
 ## Blocked
 
@@ -48,7 +50,8 @@ tracked, and both are fixed.
 - `categories` has a case-sensitive `unique(user_id, name)` DB constraint but app code does
   case-insensitive lookups (`.ilike()`) before insert — a latent inconsistency risk, not
   currently causing observed problems (`CLAUDE.md` → Database summary).
-- No rate limiting anywhere, most notably on `/api/chat` (real Anthropic API cost exposure).
+- No rate limiting anywhere, most notably on `/api/chat` (unmetered cost exposure against the
+  self-hosted AI platform, formerly Anthropic — see `DECISIONS.md` DEC-013).
 - No pagination on any list endpoint — fine at current scale (dozens of rows), will need
   addressing well before hundreds/thousands.
 - `dominantGroup` in `components/calendar/YearView.tsx` picks the first matching task's group,
@@ -69,7 +72,7 @@ tracked, and both are fixed.
   while actually logged in (only build/type-checked + curl-tested for auth gating).
 - The `BUG-002` fix (chat error handling) was verified by code review and passing
   `tsc`/`lint`/`build`, but not by actually forcing a live failure (e.g. a temporarily broken
-  `ANTHROPIC_API_KEY`) and confirming the UI shows the friendly error message end-to-end.
+  `AI_PLATFORM_API_KEY`) and confirming the UI shows the friendly error message end-to-end.
 - The note graph's visual rendering (actual node/edge layout on screen) was never
   screenshot-verified — only the underlying linking/layout logic was tested directly against
   the database. Worth a manual look with real notes.
@@ -81,24 +84,25 @@ section as new work happens.
 
 ## Recently completed
 
-1. **AI-provider swap: Anthropic Claude API → self-hosted OpenAI-compatible platform**
-   (this session, **uncommitted** — see `PROJECT_STATE.md`): `lib/anthropic.ts` deleted,
-   replaced by `lib/ai-client.ts` (an `openai`-package client pointed at
-   `https://api.gariyuuu.com/v1`, exposing `EXTRACTION_MODEL`/`CHAT_MODEL`, both currently
-   `"Yuu no Sekai"`). `lib/categorize.ts`'s forced tool-use extraction call and
-   `app/api/chat/route.ts`'s streaming chat reply were both translated from Anthropic's
-   Messages API request/response shapes to OpenAI's Chat Completions shapes.
-   `ANTHROPIC_API_KEY` renamed to `AI_PLATFORM_API_KEY`. Full reasoning and exact before/after
-   shapes: `DECISIONS.md` → DEC-013.
-   - Verified: `tsc`/`lint`/`build` all exit 0. The forced tool-use path — the highest-risk
-     part, core to the app's daily task-extraction function — was called directly (the real
-     `extractTasks` function, not a mock) with 5 varied real messages including "remind me to
-     buy milk tomorrow"; all 5 returned correctly-shaped, correctly-parsed structured output.
-     The streaming chat-reply path was verified with the same request shape used in
-     `app/api/chat/route.ts`, returning a real multi-chunk streamed, context-grounded reply.
-     Did **not** hit the live `/api/chat` HTTP endpoint with a real session, since this app has
-     no separate dev database and doing so would write to the 2 real users' production data.
-   - Not committed, not pushed, not deployed — per explicit task instructions.
+1. **AI-provider swap: Anthropic Claude API → self-hosted OpenAI-compatible platform** —
+   commit `b4fb289`, pushed and deployed (confirmed live via `vercel env ls`/`vercel inspect`
+   during the 2026-08-07 checkpoint audit): `lib/anthropic.ts` deleted, replaced by
+   `lib/ai-client.ts` (an `openai`-package client pointed at `https://api.gariyuuu.com/v1`,
+   exposing `EXTRACTION_MODEL`/`CHAT_MODEL`, both currently `"Yuu no Sekai"`).
+   `lib/categorize.ts`'s forced tool-use extraction call and `app/api/chat/route.ts`'s
+   streaming chat reply were both translated from Anthropic's Messages API request/response
+   shapes to OpenAI's Chat Completions shapes. `ANTHROPIC_API_KEY` renamed to
+   `AI_PLATFORM_API_KEY` (set in Vercel Production; **not yet added to Preview scope** — see
+   `PROJECT_STATE.md`). Full reasoning and exact before/after shapes: `DECISIONS.md` → DEC-013.
+   - Verified: `tsc`/`lint`/`build` all exit 0 (re-confirmed clean during the 2026-08-07 audit
+     too). The forced tool-use path — the highest-risk part, core to the app's daily
+     task-extraction function — was called directly (the real `extractTasks` function, not a
+     mock) with 5 varied real messages including "remind me to buy milk tomorrow"; all 5
+     returned correctly-shaped, correctly-parsed structured output. The streaming chat-reply
+     path was verified with the same request shape used in `app/api/chat/route.ts`, returning a
+     real multi-chunk streamed, context-grounded reply. **Still never verified**: the literal
+     authenticated `/api/chat` HTTP round-trip through production, since this app has no
+     separate dev database and doing so would write to the 2 real users' production data.
 2. **Cleanup for superseded custom theme-background uploads** (not yet committed — see
    `app/api/theme-image/route.ts`): uploading a new custom background now lists the user's
    existing files in the `theme-uploads` bucket and deletes every one except the

@@ -3,40 +3,40 @@
 **This file describes the exact state of the repository at the moment of the last update. It
 is meant to let a new session resume from precisely this point.**
 
-- **Last updated:** 2026-08-06 (later the same day) — an AI-provider swap session: replaced
-  the direct Anthropic API integration with a self-hosted, OpenAI-compatible platform. **Not
-  committed, not pushed, not deployed** — per explicit task instructions, this session did not
-  run `git commit`, `git push`, or `vercel --prod --yes`.
+- **Last updated:** 2026-08-07 — a final-transfer-checkpoint audit session. **Correction to
+  this file's own prior entry below:** the AI-provider-swap session (2026-08-06, later the same
+  day) documented itself here as "not committed, not pushed, not deployed" — that was true at
+  the moment it wrote this file, but the changes were in fact committed immediately afterward as
+  `b4fb289` and are now pushed and (per the evidence below) live in production. This file was
+  simply never updated to reflect that follow-through. Treat everything below this paragraph,
+  up to "Active development objective," as the corrected current state; the rest of this file's
+  narrative sections (written from the swap session's perspective) are still accurate as
+  history, just stale on the "not committed" framing specifically.
 - **Current branch:** `main`
-- **Latest commit:** `e91699f` — "Clean up superseded custom theme-background uploads on
-  replace" (the last commit **before** this session's AI-provider-swap changes, which remain
-  uncommitted — see below). Prior commits unchanged from before: `620fa67`, `f8e46ef`,
-  `49cd6e4`, `eb3c34a`, `720e9a2`, `18200e7`, `d92a96b`, `071f6a3`, `6b55515`.
-- **Working tree: NOT clean.** This session modified `CLAUDE.md`, `DECISIONS.md`,
-  `app/api/chat/route.ts`, `lib/categorize.ts`, `package.json`, `package-lock.json`; deleted
-  `lib/anthropic.ts`; added `lib/ai-client.ts` (untracked); modified `.env.local` and
-  `.env.local.example` (both already gitignored by the `.env*` pattern in `.gitignore` — see
-  "Assumptions currently in use" below, this predates this session). Run `git status` before
-  continuing.
-- **Pushed:** Everything through `e91699f` was pushed in a prior session. This session's
-  changes are **not committed**, therefore not pushed.
-- **Not deployed.** The live production app at nodability.vercel.app is still running the code
-  as of `e91699f` — i.e. still calling the Anthropic API directly. This session's AI-provider
-  swap has **not** gone live. Do not assume production behavior matches this repo's working
-  tree until a deploy is explicitly requested and run.
-- **Uncommitted files:** `CLAUDE.md`, `DECISIONS.md`, `app/api/chat/route.ts`,
-  `lib/categorize.ts`, `package.json`, `package-lock.json` (modified); `lib/anthropic.ts`
-  (deleted). **Untracked files:** `lib/ai-client.ts`.
-- **Database/infra state:** Unchanged by this session — no schema/RLS/migration changes were
-  made (out of scope per the task instructions). Migrations `006_notes.sql` and
-  `007_theme_uploads_bucket.sql` remain the latest applied, as of the prior session's audit.
+- **Latest commit:** `b4fb289` — "Switch chat + task extraction from Anthropic to self-hosted
+  goat-ai-platform." Prior commits: `e91699f`, `620fa67`, `f8e46ef`, `49cd6e4`, `eb3c34a`,
+  `720e9a2`, `18200e7`, `d92a96b`, `071f6a3`, `6b55515`.
+- **Working tree: clean.** `git status` shows nothing to commit as of this audit.
+- **Pushed:** Everything through `b4fb289` is on `origin/main` (Verified: `git fetch origin`
+  returned nothing new; `git log origin/main --oneline -1` matches local `HEAD`).
+- **Deployed.** Verified via `vercel env ls production` (`AI_PLATFORM_API_KEY` is present,
+  Encrypted, added ~9h before this audit) and `vercel ls nodability` / `vercel inspect` (the
+  newest Production deployment, aliased to `nodability.vercel.app`, was created ~7h before this
+  audit — chronologically after the `b4fb289` commit). The AI-provider swap is live in
+  production. `ANTHROPIC_API_KEY` is still also present in the Vercel dashboard (unused now,
+  legacy — safe to remove in a future cleanup pass but not urgent).
+- **Uncommitted files:** none.
+- **Database/infra state:** Unchanged by the swap — no schema/RLS/migration changes were part
+  of it. Migrations `006_notes.sql` and `007_theme_uploads_bucket.sql` remain the latest
+  applied, unverified against live Supabase in this audit (no DB access available; take on
+  faith from the prior session's audit unless a session with DB access re-confirms).
 
 ## Active development objective
 
-None right now. This session's objective — "replace the two Anthropic call sites with a
+None. The AI-provider swap's objective — "replace the two Anthropic call sites with a
 self-hosted OpenAI-compatible platform so the user stops paying for direct Anthropic API
-access" — is **code-complete and verified, but deliberately left uncommitted/undeployed** per
-the task's explicit instructions (no commit, no push, no deploy unless separately asked).
+access" — is code-complete, verified, **committed (`b4fb289`), pushed, and deployed to
+production** (see the corrected status block above).
 
 ## Last completed task
 
@@ -69,9 +69,10 @@ would write to the 2 real users' production Supabase data).
 
 ## Current unfinished task
 
-**None**, but the change is **uncommitted**. If a future session (or this one, later) is asked
-to commit/push/deploy this work, do so deliberately — re-run the three verification commands
-first, since time may have passed and `node_modules`/lockfile drift is possible.
+**None.** The change is committed, pushed, and deployed (see above). One genuinely open item:
+a real, logged-in end-to-end smoke test of `/api/chat` against production has still never been
+done (the swap session deliberately avoided this to not write to real user data without
+permission) — worth doing once someone can sign in as one of the 2 real accounts.
 
 ## Files related to the current state
 
@@ -122,7 +123,7 @@ findings tracked as `ISSUE-006` in `CLAUDE.md` (deliberately deferred, `next` ve
 
 ## Blockers
 
-None. This work is complete and verified; it is simply not yet committed/deployed, by design.
+None. This work is complete, verified, committed, pushed, and deployed.
 
 ## Assumptions currently in use (Inferred, not stated anywhere explicitly)
 
@@ -144,31 +145,30 @@ None. This work is complete and verified; it is simply not yet committed/deploye
 
 ## Next recommended actions
 
-1. **If satisfied with this session's verification, ask explicitly for a commit** — this
-   session deliberately did not run `git commit`/`git push`/`vercel --prod --yes` per its
-   instructions. `git status` will show the changes listed above as uncommitted/untracked.
-2. Once committed and (if desired) deployed, do a **real** end-to-end smoke test through the
-   live app (logged in as one of the 2 real accounts) — this session's verification exercised
-   the exact underlying functions/request shapes but never the literal authenticated HTTP
-   round-trip, since that would have written to production data without permission.
-3. Consider whether `AI_PLATFORM_API_KEY` needs to be added to the Vercel dashboard
-   (Production **and** Preview scopes) before any deploy — it does not exist there yet;
-   `ANTHROPIC_API_KEY` is still the var currently set in Vercel.
-4. Older, unrelated deferred items unchanged by this session: `ISSUE-006` (`npm audit
-   fix --force`), a minimal test suite, notes/graph visual verification, and confirming
-   whether the life-area-grouping discoverability fix changed real adoption.
+1. Do a **real** end-to-end smoke test through the live app (logged in as one of the 2 real
+   accounts) — the swap session's verification exercised the exact underlying functions/request
+   shapes but never the literal authenticated HTTP round-trip through production, and this still
+   hasn't happened since.
+2. Consider removing the now-unused `ANTHROPIC_API_KEY` from the Vercel dashboard (Production +
+   Preview) — not urgent, just dead config.
+3. Older, unrelated deferred items: `ISSUE-006` (`npm audit fix --force`), a minimal test suite,
+   notes/graph visual verification, and confirming whether the life-area-grouping
+   discoverability fix changed real adoption.
 
 ## Verification required before continuing
 
 - Run `git status` and `git log --oneline -3` at the start of any new session. Expect: `HEAD`
-  at `e91699f`, but a **dirty working tree** (this session's uncommitted AI-provider-swap
-  changes) — do not assume a clean tree without checking.
+  at `b4fb289`, clean working tree, `main` up to date with `origin/main` — this was re-verified
+  during the 2026-08-07 checkpoint audit. Do not assume this is still true without checking;
+  it's exactly the kind of thing that drifts between sessions.
 - Re-run `npm run build`, `npx tsc --noEmit`, and `npm run lint` to confirm the "all pass"
-  status in this file is still accurate — especially if `npm install` has been re-run or time
-  has passed, since the `openai` package is new to this repo and its own version may have
-  moved.
-- Before any deploy: confirm `AI_PLATFORM_API_KEY` (not `ANTHROPIC_API_KEY`) is set correctly
-  in the Vercel dashboard for both Production and Preview, or every AI call will fail in
-  production immediately after deploy.
-- If resuming much later, re-verify Supabase migration state and live row counts as before —
-  unaffected by this session, but drifts independently via real usage.
+  status in this file is still accurate (re-verified clean, exit 0 on all three, during the
+  2026-08-07 audit).
+- `AI_PLATFORM_API_KEY` is confirmed present in the Vercel dashboard for **Production only**
+  (Verified `vercel env ls production` / `vercel env ls preview` during the 2026-08-07 audit).
+  **Preview does not have it** — only the now-unused `ANTHROPIC_API_KEY` is set there. Any
+  Preview deployment's `/api/chat` will fail on every message until `AI_PLATFORM_API_KEY` is
+  added to the Preview scope too. Low urgency in practice (Preview deploys aren't part of the
+  actual workflow — see `DEPLOYMENT.md`), but a real gap if one is ever created.
+- If resuming much later, re-verify Supabase migration state and live row counts — this was
+  not re-checked in the 2026-08-07 audit (no DB access available then either).

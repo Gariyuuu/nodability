@@ -29,9 +29,9 @@ graph TD
   API -->|userId-scoped queries| DataLib["lib/tasks.ts / lib/ideas.ts / lib/messages.ts"]
   DataLib --> ServiceClient["lib/supabase.ts (service-role key, bypasses RLS)"]
   ServiceClient --> Postgres[("Supabase Postgres")]
-  API -->|chat only| Anthropic["Anthropic Claude API"]
-  Anthropic -->|Haiku extraction| Categorize["lib/categorize.ts"]
-  Anthropic -->|Sonnet streamed reply| ChatRoute["app/api/chat/route.ts"]
+  API -->|chat only| AIPlatform["Self-hosted AI platform (api.gariyuuu.com)"]
+  AIPlatform -->|extraction call| Categorize["lib/categorize.ts"]
+  AIPlatform -->|streamed reply| ChatRoute["app/api/chat/route.ts"]
   Postgres -. RLS owner-only policies .-> Postgres
 ```
 
@@ -63,8 +63,10 @@ graph TD
   function takes `userId` as its first parameter and uses the service-role Supabase client
   (`lib/supabase.ts`). This is the actual authorization boundary — see
   [Server/client boundaries](#serverclient-boundaries) below.
-- **AI layer** (`lib/anthropic.ts`, `lib/categorize.ts`, `lib/prompts.ts`): wraps the Anthropic
-  SDK; `lib/categorize.ts:extractTasks()` is the only place a forced tool-use call is made.
+- **AI layer** (`lib/ai-client.ts`, `lib/categorize.ts`, `lib/prompts.ts`): wraps the `openai`
+  npm package pointed at a self-hosted, OpenAI-compatible platform (see `DECISIONS.md`
+  DEC-013 — this replaced a direct Anthropic SDK integration as of commit `b4fb289`);
+  `lib/categorize.ts:extractTasks()` is the only place a forced tool-use call is made.
 
 ## Server/client boundaries
 
@@ -106,23 +108,26 @@ graph TD
 2. Route calls `requireUserId()`.
 3. Route fetches `listCategories(userId)` and `listRecentMessages(userId, 20)` in parallel.
 4. Route calls `lib/categorize.ts:extractTasks(message, categoryNames, history)` — this makes
-   a **separate, forced tool-use** Anthropic API call using the Haiku model, asking it to
-   return a structured `extract_tasks` tool call (new tasks, categories, deletions, and
-   whether the message is a "recall query"). Throws if Haiku doesn't return the expected tool
-   call shape.
+   a **separate, forced tool-use** call against the self-hosted AI platform (`EXTRACTION_MODEL`
+   from `lib/ai-client.ts`), asking it to return a structured `extract_tasks` tool call (new
+   tasks, categories, deletions, and whether the message is a "recall query"). Throws if the
+   model doesn't return the expected tool call shape.
 5. For each extracted task: `getOrCreateCategory(userId, name)` then `insertTask(userId, ...)`.
    For each deletion: `deleteCategoryByName` / `deleteTaskByTitle`.
 6. Route re-fetches `listTasks(userId)`, filters to `status === "open"`, and builds a
    plain-text "context block" describing every open task plus an "Actions just taken" log of
    what this turn actually did.
-7. Route calls `anthropic.messages.stream(...)` with the Sonnet model, the persona system
-   prompt (`NODABILITY_SYSTEM_PROMPT`), the recent conversation history, and a final user turn
-   containing today's date + the context block + the actions log + the raw user message.
-8. The stream is piped straight to the HTTP response as `text/plain` chunks.
+7. Route calls `aiClient.chat.completions.create({ stream: true, ... })` (`lib/ai-client.ts`,
+   `CHAT_MODEL`) with the persona system prompt (`buildSystemPrompt(personality)`), the recent
+   conversation history, and a final user turn containing today's date + the context block +
+   the actions log + the raw user message.
+8. The stream (`for await (const chunk of stream)`, reading
+   `chunk.choices[0]?.delta?.content`) is piped straight to the HTTP response as `text/plain`
+   chunks.
 9. On stream completion, both the user's message and the full assistant reply are persisted
-   via `insertMessage(userId, ...)` — **note:** if the stream errors mid-flight
-   (`stream.on("error", ...)`), these two `insertMessage` calls are skipped, so that turn is
-   never saved to chat history (a known edge case, see `CLAUDE.md` ISSUE-002).
+   via `insertMessage(userId, ...)` — **note:** if the stream errors mid-flight, these two
+   `insertMessage` calls are skipped, so that turn is never saved to chat history (a known edge
+   case, see `CLAUDE.md` ISSUE-002).
 
 ## Authentication flow
 
@@ -161,9 +166,12 @@ static files in `public/theme/`, served by Next.js directly, no Storage/DB invol
 
 ## External API integration flow
 
-- **Anthropic:** `lib/anthropic.ts` constructs one client from `ANTHROPIC_API_KEY`, used by
-  both `lib/categorize.ts` (Haiku, non-streaming, forced tool-use) and
-  `app/api/chat/route.ts` (Sonnet, streaming). No retry/backoff logic exists for either call.
+- **AI platform:** `lib/ai-client.ts` constructs one `openai`-package client from
+  `AI_PLATFORM_API_KEY`, pointed at `https://api.gariyuuu.com/v1`, used by both
+  `lib/categorize.ts` (`EXTRACTION_MODEL`, non-streaming, forced tool-use) and
+  `app/api/chat/route.ts` (`CHAT_MODEL`, streaming). No retry/backoff logic exists for either
+  call. Replaced a direct Anthropic SDK client as of commit `b4fb289` — see `DECISIONS.md`
+  DEC-013.
 - **Supabase:** three different client constructions for three different trust levels — see
   [Server/client boundaries](#serverclient-boundaries).
 - **Unsplash:** not an "integration" in the API sense — just hotlinked CDN image URLs baked
@@ -228,7 +236,7 @@ separate dev/staging database) — see `CLAUDE.md`'s Deployment section and
 - No pagination on any list endpoint (`listTasks`, `listRecentMessages` uses a hard `limit`,
   `listIdeas`, `listCategories` all return unbounded/lightly-bounded result sets) — fine at
   current scale (dozens of rows), would need revisiting well before hundreds/thousands.
-- No rate limiting anywhere — a scripted/abusive client could run up Anthropic API costs
+- No rate limiting anywhere — a scripted/abusive client could run up AI-platform costs
   quickly since `/api/chat` has no per-user or per-IP throttling.
 
 ## Security boundaries

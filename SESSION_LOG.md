@@ -792,3 +792,65 @@ this file existed; dates are taken from `git log` where possible.
   (3) `vercel --prod --yes`, and ideally (4) one real logged-in smoke test of `/api/chat`
   against production once deployed, since this session could not safely do that against the
   live database.
+
+---
+
+## Session: 2026-08-07 — Final-transfer-checkpoint documentation audit
+
+- **Account/agent:** New session, no memory of prior chat history — resumed from the doc set
+  per this repo's own working instructions.
+- **Goal:** A "final transfer checkpoint" pass for an account-switch handoff: re-verify
+  `PROJECT_STATE.md`/`TASKS.md`/`FEATURES.md` against real code, record true git state, scan
+  for secrets, resolve cross-file contradictions, and refresh `HANDOFF.md`'s "Prompt for the
+  next Claude Code account" section. Not a coding task.
+- **Key finding:** `git log --oneline -5` showed `HEAD` at `b4fb289` ("Switch chat + task
+  extraction from Anthropic to self-hosted goat-ai-platform"), clean working tree, `main` up to
+  date with `origin/main`. But `PROJECT_STATE.md`, `TASKS.md`, and `HANDOFF.md` all still
+  described that exact swap as **uncommitted, unpushed, and undeployed** — because the session
+  that wrote those files did so before the commit landed, and no session since had updated them
+  to reflect that it had. Confirmed via `vercel env ls production`/`vercel env ls preview`
+  (`AI_PLATFORM_API_KEY` present in Production only, added ~9h before this audit) and
+  `vercel ls nodability` / `vercel inspect` (newest Production deployment, aliased to
+  `nodability.vercel.app`, created ~7h before this audit — after the commit) that the swap is
+  actually live in production. Also found: `AI_PLATFORM_API_KEY` is missing from the Preview
+  env scope (only the now-dead `ANTHROPIC_API_KEY` is there) — a real, if low-urgency, gap.
+- **Files changed:** `PROJECT_STATE.md` (corrected commit/push/deploy status throughout),
+  `TASKS.md` (current task + recently-completed entry corrected), `HANDOFF.md` (status header,
+  project description, command expectations, and the "Prompt for the next Claude Code account"
+  section all refreshed to `b4fb289`; added an explicit note about the staleness found), plus
+  targeted fixes across `CLAUDE.md`, `ARCHITECTURE.md`, `API_REFERENCE.md`, `DEPLOYMENT.md`,
+  `FEATURES.md`, `FILE_MAP.md`, `SECURITY.md`, `ROADMAP.md` to replace now-inaccurate "current"
+  references to `lib/anthropic.ts`/`ANTHROPIC_API_KEY`/"Anthropic Claude API" with the actual
+  current AI layer (`lib/ai-client.ts`/`AI_PLATFORM_API_KEY`/self-hosted platform), while
+  leaving genuinely historical narrative (`DECISIONS.md` DEC-013, prior `SESSION_LOG.md`
+  entries, `CHANGELOG.md`'s dated entries) untouched as accurate history. Added a `CHANGELOG.md`
+  entry for `b4fb289`, which had none.
+- **Commands run:** `git status`, `git log --oneline -5`, `git fetch origin`, `git log
+  origin/main --oneline -3` (read-only); `npx tsc --noEmit`, `npm run lint`, `npm run build`
+  (all exit 0, re-confirmed clean); `git grep` for secret-shaped patterns across tracked files
+  (no real secrets found, only placeholders/incidental text matches); `vercel ls nodability`,
+  `vercel inspect <url>`, `vercel env ls production`, `vercel env ls preview` (read-only,
+  evidence-gathering only — no deploys or env changes made).
+- **Tests run:** No automated test suite exists (unchanged). Verification was `tsc`/`lint`/
+  `build` plus the `vercel`/`git` read-only commands above.
+- **Results:** Docs now agree with real git/Vercel state. No secrets found in tracked files or
+  any of the 19 `.md` docs — `.env.local`/`.env.local.example` confirmed still gitignored.
+- **Decisions made:** Left `SESSION_LOG.md`'s own prior entries and `DECISIONS.md` unedited —
+  they're dated historical records, accurate for the moment they were written; only
+  current-state docs (`PROJECT_STATE.md`, `TASKS.md`, `HANDOFF.md`, and the "what's true today"
+  sections of the reference docs) were corrected.
+- **Problems found:** The core one is the headline finding above — a real, if narrow, class of
+  staleness worth watching for going forward: a session that documents itself as "did not
+  commit" needs a way to have that corrected if a later step in its own pipeline (or the
+  harness) commits anyway. `HANDOFF.md`'s refreshed prompt now tells the next account not to
+  trust "uncommitted"/"not deployed" claims without independently verifying them.
+- **Work completed:** The full checkpoint pass — doc-vs-code re-verification, git/secret/
+  contradiction audit, `HANDOFF.md` prompt refresh.
+- **Work remaining:** Nothing from this session. Pre-existing, unrelated: `ISSUE-006`
+  (`npm audit fix --force`, deferred), no test suite, notes/graph visual verification never
+  done, `AI_PLATFORM_API_KEY` missing from Vercel Preview scope, and a real logged-in
+  authenticated smoke test of `/api/chat` against production (still never done for the
+  AI-provider swap).
+- **Recommended next action:** None required. If/when convenient: add `AI_PLATFORM_API_KEY` to
+  the Vercel Preview scope, remove the now-dead `ANTHROPIC_API_KEY` from both scopes, and do
+  the real authenticated `/api/chat` smoke test.

@@ -1,20 +1,30 @@
 # HANDOFF.md
 
 Short, high-signal onboarding for a new Claude Code account with zero access to prior chat
-history. Last updated 2026-08-06.
+history. Last updated 2026-08-07 (final-transfer-checkpoint audit).
 
 ## Status: new features shipped, deployed, and pushed
 
-Latest work: an Obsidian-style linked notes system (`/notes`) and custom theme background
-image uploads — commit `f8e46ef`, documented as of `620fa67`. Deployed to production and
-verified live. **Everything through `620fa67` is pushed to `origin/main`.**
+Latest work: an AI-provider swap replacing the direct Anthropic API with a self-hosted
+OpenAI-compatible platform — commit `b4fb289`. Confirmed live in production during this
+checkpoint audit (`AI_PLATFORM_API_KEY` present in Vercel Production, newest Production
+deployment created after the commit). **Everything through `b4fb289` is pushed to
+`origin/main`.** Before that: an Obsidian-style linked notes system (`/notes`) and custom theme
+background image uploads — commit `f8e46ef`, documented as of `620fa67`.
+
+**Correction found during this checkpoint:** `PROJECT_STATE.md` and `TASKS.md` had described
+the AI-provider swap as uncommitted/unpushed/undeployed — that was true only for the moment
+those files were written; the swap was committed immediately afterward and is now live. Both
+files have been corrected. If you see similar "uncommitted work" language anywhere else in
+these docs going forward, verify against real `git`/`vercel` state before trusting it.
 
 ## What is this project?
 
 Nodability — a chat-driven personal task organizer for 2 specific people (a couple), built
-with Next.js 16 + Supabase + the Anthropic API. It's live at
-**https://nodability.vercel.app**, in real daily use, with real data (19 tasks, 112 messages,
-7 ideas, 3 categories, 0 notes as of the original audit plus this session's additions).
+with Next.js 16 + Supabase + a self-hosted OpenAI-compatible AI platform (formerly the direct
+Anthropic API — see `DECISIONS.md` DEC-013). It's live at **https://nodability.vercel.app**,
+in real daily use, with real data (19 tasks, 112 messages, 7 ideas, 3 categories, 0 notes as of
+the original audit — not re-counted at this checkpoint since no DB access was available).
 
 ## What should I read first?
 
@@ -28,9 +38,10 @@ In this order:
 
 ## What is the current task?
 
-**None.** The most recent feature request (Obsidian-style notes + custom theme background
-uploads) is complete, deployed, and verified — commit `f8e46ef`. The only recorded open item
-is `ISSUE-006` in `CLAUDE.md` (3 remaining `npm audit` advisories, deliberately deferred). Not
+**None.** The most recent work (AI-provider swap, Anthropic → self-hosted platform) is
+complete, committed, pushed, and deployed — commit `b4fb289`. Before that: Obsidian-style
+notes + custom theme background uploads, commit `f8e46ef`. The only recorded open item is
+`ISSUE-006` in `CLAUDE.md` (3 remaining `npm audit` advisories, deliberately deferred). Not
 urgent, not a task to pick up unprompted.
 
 ## What was the previous agent doing?
@@ -44,7 +55,14 @@ studying. After 3 clarifying questions (all answered with the recommended option
 shipped: a `/notes` page with `[[wikilink]]`-style note connections and a force-directed graph
 view, plus an 11th "Custom" theme palette backed by a real Supabase Storage upload. Deployed
 as commit `f8e46ef` — verified live and pushed to `origin/main`, along with a follow-up
-documentation commit (`620fa67`). See `SESSION_LOG.md` for full chronological detail.
+documentation commit (`620fa67`); (6) a follow-up session cleaned up superseded custom
+theme-background uploads on replace (`e91699f`); (7) a provider-swap session replaced the
+direct Anthropic API with a self-hosted OpenAI-compatible platform for both the chat reply and
+task-extraction call sites, committed as `b4fb289` — its own `PROJECT_STATE.md`/`TASKS.md`
+entries said this was left uncommitted, which was stale by the time of (8); (8) this
+2026-08-07 checkpoint audit re-verified real git/Vercel state, found and corrected that
+staleness, re-ran `tsc`/`lint`/`build` (all clean), scanned for secrets (none found beyond
+placeholders), and refreshed this section. See `SESSION_LOG.md` for full chronological detail.
 
 ## What works right now?
 
@@ -110,7 +128,7 @@ DEC-011).
 ## Which commands should I run first?
 
 ```bash
-git status                # expect: clean, HEAD at 620fa67, main up to date with origin/main
+git status                # expect: clean, HEAD at b4fb289, main up to date with origin/main
 npx tsc --noEmit          # should pass
 npm run build             # should pass
 npm run lint              # should pass (exit 0)
@@ -135,30 +153,40 @@ Read CLAUDE.md, PROJECT_STATE.md, TASKS.md, and HANDOFF.md in full before doing 
 
 Then:
 1. Run `git status` and `git log --oneline -10`. Expect: a clean working tree, HEAD at
-   620fa67 ("Document the notes/custom-image feature and add v0.8 changelog entry"), main up
-   to date with origin/main (everything through 620fa67 has been pushed). If you see anything
-   else (uncommitted files, a different HEAD, unpushed commits), stop and reconcile before
-   proceeding.
+   b4fb289 ("Switch chat + task extraction from Anthropic to self-hosted goat-ai-platform"),
+   main up to date with origin/main (everything through b4fb289 has been pushed). If you see
+   anything else (uncommitted files, a different HEAD, unpushed commits), stop and reconcile
+   before proceeding — and note that a prior checkpoint (2026-08-07) found this exact kind of
+   drift: PROJECT_STATE.md/TASKS.md had described b4fb289's work as uncommitted when it had
+   actually already landed, simply because the docs weren't updated after the commit happened.
+   Don't assume any "uncommitted"/"not deployed" claim in these docs is current — verify with
+   real `git`/`vercel` commands first.
 2. Run `npx tsc --noEmit`, `npm run build`, and `npm run lint` — all three should pass (exit
    0). If any fail, something regressed since this handoff; investigate before assuming the
    docs are simply stale.
-3. Summarize your understanding of the project back to the user in a few sentences before
+3. If your task touches AI calls, deployment, or env vars: `AI_PLATFORM_API_KEY` is set in
+   Vercel **Production** but **not Preview** (confirmed via `vercel env ls` at the 2026-08-07
+   checkpoint) — a real gap if a Preview deployment is ever created. `ANTHROPIC_API_KEY` is
+   still present in both scopes but unused by the app now (legacy, safe to remove later).
+4. Summarize your understanding of the project back to the user in a few sentences before
    editing anything, so any misunderstanding surfaces immediately.
-4. Identify any contradictions between what these memory files claim and what you actually
+5. Identify any contradictions between what these memory files claim and what you actually
    observe in the current code/config/live systems — call them out explicitly rather than
    silently trusting or silently overriding the docs.
-5. Continue whatever task the user gives you without redoing the authentication, theming,
-   calendar-views, templates-page, bug-fix, personality-system, or notes/custom-image work
-   already completed (see FEATURES.md and TASKS.md's "Recently completed" for what's already
-   done) — unless the user is specifically asking you to change one of those.
-6. Preserve the existing architecture (service-role client + manual userId filtering,
+6. Continue whatever task the user gives you without redoing the authentication, theming,
+   calendar-views, templates-page, bug-fix, personality-system, notes/custom-image, or
+   AI-provider-swap work already completed (see FEATURES.md and TASKS.md's "Recently
+   completed" for what's already done) — unless the user is specifically asking you to change
+   one of those.
+7. Preserve the existing architecture (service-role client + manual userId filtering,
    magic-link-only auth, the semantic theme-token system, the shared-rules-plus-per-persona-
    voice prompt structure, the forward-only manual-migration workflow, the no-stored-edges
-   dynamic wikilink resolution) unless there's a strong, explicitly-discussed reason to change
-   it — these are documented in DECISIONS.md along with why they were chosen.
-7. Don't run `npm audit fix --force` or otherwise bump `next` past 16.2.11 without explicit
+   dynamic wikilink resolution, the OpenAI-compatible `lib/ai-client.ts` pointed at the
+   self-hosted platform) unless there's a strong, explicitly-discussed reason to change it —
+   these are documented in DECISIONS.md along with why they were chosen.
+8. Don't run `npm audit fix --force` or otherwise bump `next` past 16.2.11 without explicit
    discussion — see ISSUE-006 in CLAUDE.md.
-8. After completing any meaningful work, update PROJECT_STATE.md, TASKS.md, and
+9. After completing any meaningful work, update PROJECT_STATE.md, TASKS.md, and
    SESSION_LOG.md (append, don't overwrite), plus whichever feature/architecture/API/
    database/testing/deployment/security doc your change affects, per the "Permanent rules"
    section at the bottom of CLAUDE.md. Never commit or push without explicit instruction.

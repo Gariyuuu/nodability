@@ -9,6 +9,20 @@ hand-maintained, user-facing summary — the two are related but not identical; 
 No CHANGELOG.md existed in this repository before this entry — this file is new, not a
 rewrite of prior history. No dates or versions below are invented.
 
+## 2026-08-06 (later) — AI-provider swap: Anthropic → self-hosted platform (`b4fb289`)
+
+Replaced the direct Anthropic API integration with a self-hosted, OpenAI-compatible platform
+(`https://api.gariyuuu.com/v1`) for both AI call sites: the forced-tool-use task-extraction
+call (`lib/categorize.ts`) and the streaming chat reply (`app/api/chat/route.ts`). New
+`lib/ai-client.ts` replaces the deleted `lib/anthropic.ts`; `@anthropic-ai/sdk` swapped for the
+`openai` npm package; `ANTHROPIC_API_KEY` renamed to `AI_PLATFORM_API_KEY`. Full reasoning in
+`DECISIONS.md` DEC-013. Verified: `tsc`/`lint`/`build` all exit 0; the extraction path was
+tested directly against 5 varied real messages, all correctly parsed. Confirmed live in
+production during the 2026-08-07 checkpoint audit (`AI_PLATFORM_API_KEY` present in Vercel
+Production, newest deployment created after this commit) — note that this commit's own
+companion doc updates (`PROJECT_STATE.md`/`TASKS.md` at the time) incorrectly described the
+work as uncommitted; that was corrected in the 2026-08-07 audit.
+
 ## 2026-08-06 — Fixed every open bug and tech-debt item (`18200e7`)
 
 Per explicit user instruction to finish all outstanding work: fixed all 9 `npm run lint`

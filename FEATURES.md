@@ -21,8 +21,11 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
 - **Backend:** `app/api/chat/route.ts`, `lib/categorize.ts`, `lib/prompts.ts`,
   `lib/personalities.ts`.
 - **Database:** `tasks`, `categories`, `messages` (all read/written).
-- **External integrations:** Anthropic Claude API (Haiku for extraction, Sonnet for reply).
-- **Environment variables:** `ANTHROPIC_API_KEY`.
+- **External integrations:** A self-hosted, OpenAI-compatible AI platform
+  (`https://api.gariyuuu.com/v1`, one model — `"Yuu no Sekai"` — used for both extraction and
+  reply). Replaced the direct Anthropic Claude API as of commit `b4fb289` — see `DECISIONS.md`
+  DEC-013.
+- **Environment variables:** `AI_PLATFORM_API_KEY`.
 - **Permissions:** Requires auth (`requireUserId()`); fully scoped to the caller's own data.
 - **Validation:** Only checks `message` is a non-empty string (`app/api/chat/route.ts:27`).
   No length limit, no profanity/abuse filtering, no rate limiting.

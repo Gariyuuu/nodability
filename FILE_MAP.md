@@ -69,7 +69,7 @@ Practical map of files a future coding agent is likely to touch. Trivial generat
 - **Purpose:** Calls Haiku with a forced `extract_tasks` tool-use to turn a free-form chat
   message into structured tasks/categories/deletions/recall-query flag.
 - **Called by:** `app/api/chat/route.ts`.
-- **Calls:** `lib/anthropic.ts`, `lib/prompts.ts:EXTRACTION_INSTRUCTIONS`.
+- **Calls:** `lib/ai-client.ts`, `lib/prompts.ts:EXTRACTION_INSTRUCTIONS`.
 - **Edit when:** changing what fields get extracted, or the extraction prompt/schema.
 - **Risk:** Medium. Throws if the model doesn't return the expected tool call — this
   propagates as an unhandled error into `app/api/chat/route.ts` (see ISSUE-002). Changing the
@@ -103,12 +103,13 @@ Practical map of files a future coding agent is likely to touch. Trivial generat
 - **Risk:** Low. Purely additive data; `findPersonality` always has a safe fallback (the
   first entry, Nodo) for unrecognized IDs.
 
-## `lib/anthropic.ts`
-- **Purpose:** Anthropic client instance + the two model-name constants
-  (`HAIKU_MODEL`, `SONNET_MODEL`).
-- **Edit when:** changing which Claude models are used.
-- **Risk:** Low, but changing model names has direct cost/quality/billing implications — see
-  `CLAUDE.md`'s Anthropic billing note.
+## `lib/ai-client.ts`
+- **Purpose:** `openai`-package client pointed at the self-hosted, OpenAI-compatible platform
+  (`https://api.gariyuuu.com/v1`) + the two model-name constants (`EXTRACTION_MODEL`,
+  `CHAT_MODEL`, both currently `"Yuu no Sekai"`). Replaced the deleted `lib/anthropic.ts` as of
+  commit `b4fb289` — see `DECISIONS.md` DEC-013.
+- **Edit when:** changing which model(s) are used, or the platform's base URL.
+- **Risk:** Low, but changing model names has direct cost/quality/latency implications.
 
 ## `app/api/*/route.ts` (tasks, ideas, categories, templates, chat)
 - **Purpose:** The entire internal HTTP API surface. Full request/response detail in

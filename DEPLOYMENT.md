@@ -25,9 +25,13 @@ Vercel. Project name `nodability`, ID `prj_r3qYTjvfmaAKbRsy4b6P87Rr5U1r`, team
 
 Set in the Vercel dashboard for **both Production and Preview** scopes (Verified via
 `vercel env ls`): `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
-`NEXT_PUBLIC_SUPABASE_URL`, `ANTHROPIC_API_KEY`. No Development-scope Vercel env vars exist —
-local development relies entirely on `.env.local`. See `CLAUDE.md`'s Environment setup table
-for what each variable does.
+`NEXT_PUBLIC_SUPABASE_URL`. `AI_PLATFORM_API_KEY` — the current AI-call credential, replacing
+`ANTHROPIC_API_KEY` as of commit `b4fb289` (see `DECISIONS.md` DEC-013) — is set for
+**Production only**; it is **missing from Preview** (Verified `vercel env ls preview` during
+the 2026-08-07 checkpoint audit), so any Preview deployment's AI calls will fail until it's
+added there too. The old `ANTHROPIC_API_KEY` is still present in both scopes but is dead/unused.
+No Development-scope Vercel env vars exist — local development relies entirely on
+`.env.local`. See `CLAUDE.md`'s Environment setup table for what each variable does.
 
 ## ⚠️ Preview deployments share the production database
 
@@ -90,7 +94,10 @@ N/A — no Supabase Storage buckets or other object storage are used.
   manually configured in the Supabase dashboard (Authentication → URL Configuration) during
   development, since the default Site URL was `http://localhost:3000` and caused real
   magic-link failures until corrected (see `SESSION_LOG.md`).
-- **Anthropic API key** — a standard pay-per-token API key, no sandbox/test mode used.
+- **Self-hosted AI platform** (`https://api.gariyuuu.com/v1`) — a personal OpenAI-compatible
+  platform the user built, authenticated via `AI_PLATFORM_API_KEY`. Replaced a standard
+  pay-per-token Anthropic API key as of commit `b4fb289` (see `DECISIONS.md` DEC-013); no
+  sandbox/test mode used for either.
 
 ## Scheduled jobs / webhooks
 

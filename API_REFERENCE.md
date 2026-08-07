@@ -189,15 +189,17 @@ inconsistency is worth normalizing if you touch this route.
   - Writes (per extracted deletion): `deleteCategoryByName` or `deleteTaskByTitle`.
   - Writes (on successful stream completion only): `insertMessage(userId, "user", message)`
     and `insertMessage(userId, "assistant", fullReply)`.
-- **External call:** Two separate Anthropic API calls per request — one non-streaming Haiku
-  call (`lib/categorize.ts:extractTasks`, forced tool-use), one streaming Sonnet call.
+- **External call:** Two separate calls to the self-hosted AI platform per request (see
+  `DECISIONS.md` DEC-013) — one non-streaming extraction call (`lib/categorize.ts:extractTasks`,
+  forced tool-use, `EXTRACTION_MODEL`), one streaming chat-reply call (`CHAT_MODEL`). Both
+  currently resolve to the same model, `"Yuu no Sekai"`.
 - **Errors:** **No error handling exists past the initial auth check.** Any exception thrown
-  by `extractTasks`, any Supabase write, or a mid-stream Anthropic error results in either an
-  unhandled 500 (framework default) or a stream that errors out client-side without
+  by `extractTasks`, any Supabase write, or a mid-stream error from the AI platform results in
+  either an unhandled 500 (framework default) or a stream that errors out client-side without
   persisting that turn. See `CLAUDE.md` ISSUE-002 for the full explanation and
   `TASKS.md` BUG-002 for the fix.
-- **Rate limits:** None implemented by this app. Real Anthropic API cost is incurred on every
-  call with no throttling.
+- **Rate limits:** None implemented by this app. Cost against the AI platform is incurred on
+  every call with no throttling.
 - **Example request:**
   ```
   POST /api/chat

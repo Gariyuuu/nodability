@@ -48,7 +48,8 @@ fully functional end-to-end.
 - Fix `/api/chat` error handling and lint errors (see Current milestone above).
 - Add basic automated tests, starting with the manual smoke-test checklist in
   [TESTING.md](TESTING.md) converted into Playwright scripts.
-- Add rate limiting to `/api/chat` to bound Anthropic API cost exposure.
+- Add rate limiting to `/api/chat` to bound AI-platform cost exposure (formerly Anthropic;
+  see `DECISIONS.md` DEC-013).
 - Self-host the 4 theme background photos instead of hotlinking Unsplash (`TASKS.md` TODO-003).
 - Make template application idempotent (`TASKS.md` TODO-002).
 - Decide whether `is_recall_query` should drive different chat behavior or be removed
@@ -76,6 +77,7 @@ fully functional end-to-end.
 ## Out-of-scope (Inferred from the app's deliberate 2-person, invite-only design)
 
 - Public signup / multi-tenant scale-out.
-- Payments/billing (the app itself has none; only the underlying Anthropic API is billed).
+- Payments/billing (the app itself has none; only the underlying AI platform usage, and
+  Supabase, incur any cost).
 - Team/role-based permissions.
 - Native mobile app.
