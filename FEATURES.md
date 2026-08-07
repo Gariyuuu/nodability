@@ -235,11 +235,14 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
   server-side in the API route (not just client-side).
 - **Error states:** Upload failure shows an inline error message in the theme popover
   (`uploadError` state in `ThemeToggle.tsx`).
-- **Known issues:** Old uploads are never cleaned up — replacing your custom background
-  leaves the previous file in Storage, orphaned. Low impact at 2-user scale but would
-  accumulate unbounded storage use over a long time. See `TASKS.md`.
-- **Remaining work / future improvements:** Delete the previous custom image when a new one
-  is uploaded, or add a "remove custom background" control.
+- **Known issues:** None — uploading a new custom background now deletes the user's prior
+  upload(s) from Storage automatically (see below). No "remove custom background" control
+  exists yet (switching back to a curated palette just stops referencing the uploaded file,
+  it doesn't delete it — that file is removed the next time a new custom image is uploaded).
+- **Cleanup behavior:** After a successful upload, `POST /api/theme-image` lists every file
+  under that user's folder in the `theme-uploads` bucket and deletes all except the
+  just-uploaded one. Verified end-to-end against the live bucket (uploaded 2 stale files,
+  uploaded a 3rd, confirmed only the 3rd remained).
 
 ---
 

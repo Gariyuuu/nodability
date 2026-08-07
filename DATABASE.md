@@ -223,9 +223,11 @@ Holds user-uploaded custom theme background photos only (`app/api/theme-image/ro
 stored under `<userId>/<timestamp>.<ext>`. Public read (needed so the image is usable in a
 plain CSS `background-image: url(...)` without an auth header); all writes go through the
 service-role client in that one API route, so no client-side Storage RLS policy exists or is
-needed for writes. No lifecycle/cleanup policy exists — uploads accumulate indefinitely and
-are never deleted even if the user later switches away from the "Custom" palette or uploads a
-replacement (the old object is simply orphaned, not removed).
+needed for writes. `app/api/theme-image/route.ts` deletes a user's previous upload(s)
+whenever a new one succeeds (lists the user's folder, removes every file except the one just
+uploaded) — so uploads don't accumulate unbounded. The only case still not cleaned up is a
+user switching back to a curated palette without ever uploading again — their last uploaded
+file remains in Storage, unreferenced but harmless.
 
 ## Generated types
 

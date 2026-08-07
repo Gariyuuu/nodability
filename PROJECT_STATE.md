@@ -4,17 +4,19 @@
 is meant to let a new session resume from precisely this point.**
 
 - **Last updated:** 2026-08-06 — a feature session that added an Obsidian-style linked notes
-  system (`/notes`) and custom theme background image uploads.
+  system (`/notes`) and custom theme background image uploads, followed by documentation and
+  a push to `origin/main`.
 - **Current branch:** `main`
-- **Latest commit:** `f8e46ef` — "Add Obsidian-style linked notes and custom theme background
-  uploads". Previous commits: `49cd6e4` (docs), `eb3c34a` (10 themes/personalities/liveliness),
-  `720e9a2` (docs), `18200e7` (bug/tech-debt fix pass), `d92a96b` (doc-sync), `071f6a3`
-  (documentation/memory system), `6b55515` (calendar views, real photo backgrounds, templates
-  page, chat suggestions).
+- **Latest commit:** `620fa67` — "Document the notes/custom-image feature and add v0.8
+  changelog entry". Previous commits: `f8e46ef` (the notes/custom-image feature itself),
+  `49cd6e4` (docs), `eb3c34a` (10 themes/personalities/liveliness), `720e9a2` (docs), `18200e7`
+  (bug/tech-debt fix pass), `d92a96b` (doc-sync), `071f6a3` (documentation/memory system),
+  `6b55515` (calendar views, real photo backgrounds, templates page, chat suggestions).
 - **Working tree: clean** (Verified via `git status` after the commit).
-- **Pushed:** Everything through `720e9a2` was pushed earlier per explicit user instruction.
-  **`eb3c34a`, `49cd6e4`, and `f8e46ef` have not been pushed** — ask before pushing. Verify
-  current push status with `git status`/`git log` rather than trusting this note.
+- **Pushed:** Everything through `620fa67` (including `eb3c34a`, `49cd6e4`, `f8e46ef`, and the
+  doc-update commit `620fa67` itself) has been pushed to `origin/main` per explicit user
+  instruction. `git status` confirms `main` is up to date with `origin/main`. Verify current
+  push status with `git status`/`git log` rather than trusting this note.
 - **Deployed to production.** `vercel --prod --yes` was run after `f8e46ef`; live smoke tests
   confirm the deployment matches the commit (see "What currently works" below).
 - **Uncommitted files:** None. **Untracked files:** None.
@@ -117,9 +119,6 @@ None.
   (`localStorage` holds the URL), not per-account — consistent with the existing pattern.
   The uploaded *file* itself lives server-side in Storage regardless, so it isn't lost if
   localStorage is cleared, just no longer referenced by the UI.
-- Old custom-background uploads are never deleted (no cleanup on replace) — acceptable at
-  2-user personal scale, would need addressing if storage costs or object count ever became
-  a real concern. See `TASKS.md`.
 - The "for each class" framing in the user's request was interpreted as "notes can optionally
   belong to a category" (matching an explicit answer to a clarifying question), not "notes
   must belong to exactly one category" — cross-category linking is allowed.
@@ -129,24 +128,20 @@ None.
 - `app/api/theme-image/route.ts` trusts the client-reported file MIME type rather than
   inspecting file bytes — acceptable given the 2-trusted-user threat model, flagged in
   `SECURITY.md` as a real gap if this app's audience/exposure ever changes.
-- No cleanup of superseded custom background uploads (see Assumptions above).
 
 ## Next recommended actions
 
-1. **Ask before pushing** `eb3c34a`, `49cd6e4`, and `f8e46ef` — 3 local commits, none pushed.
-2. Try the notes/graph feature with real notes and eyeball the graph rendering — it was
+1. Try the notes/graph feature with real notes and eyeball the graph rendering — it was
    verified at the data-logic level but not visually.
-3. Consider adding cleanup for superseded custom theme uploads (delete the old Storage object
-   when a new one replaces it).
-4. Longer-standing deferred items unchanged by this session: `ISSUE-006` (`npm audit
+2. Longer-standing deferred items unchanged by this session: `ISSUE-006` (`npm audit
    fix --force`), a minimal test suite, and confirming whether the life-area-grouping
    discoverability fix changed real adoption.
 
 ## Verification required before continuing
 
 - Run `git status` and `git log --oneline -3` at the start of any new session. Expect: clean
-  tree, `HEAD` at `f8e46ef`, `main` ahead of `origin/main` by 3 commits (unless pushed since
-  this was written — always verify directly).
+  tree, `HEAD` at `620fa67`, `main` up to date with `origin/main` (pushed this session —
+  always verify directly).
 - Re-run `npm run build`, `npx tsc --noEmit`, and `npm run lint` to confirm the "all pass"
   status in this file is still accurate.
 - If resuming much later, re-verify Supabase migration state (`007` should be the latest

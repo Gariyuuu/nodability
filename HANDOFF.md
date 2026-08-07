@@ -3,12 +3,11 @@
 Short, high-signal onboarding for a new Claude Code account with zero access to prior chat
 history. Last updated 2026-08-06.
 
-## Status: new features shipped, deployed, three commits not yet pushed
+## Status: new features shipped, deployed, and pushed
 
 Latest work: an Obsidian-style linked notes system (`/notes`) and custom theme background
-image uploads — commit `f8e46ef`. Deployed to production and verified live. **Everything
-through `720e9a2` is pushed; `eb3c34a`, `49cd6e4`, and `f8e46ef` are not** — ask the user
-before pushing them.
+image uploads — commit `f8e46ef`, documented as of `620fa67`. Deployed to production and
+verified live. **Everything through `620fa67` is pushed to `origin/main`.**
 
 ## What is this project?
 
@@ -44,8 +43,8 @@ to add custom image uploads and an "Obsidian-style neural network" note-linking 
 studying. After 3 clarifying questions (all answered with the recommended option), built and
 shipped: a `/notes` page with `[[wikilink]]`-style note connections and a force-directed graph
 view, plus an 11th "Custom" theme palette backed by a real Supabase Storage upload. Deployed
-as commit `f8e46ef` — verified live, but **not yet pushed to GitHub** (along with the two
-prior local commits `eb3c34a`/`49cd6e4`). See `SESSION_LOG.md` for full chronological detail.
+as commit `f8e46ef` — verified live and pushed to `origin/main`, along with a follow-up
+documentation commit (`620fa67`). See `SESSION_LOG.md` for full chronological detail.
 
 ## What works right now?
 
@@ -69,12 +68,9 @@ there are real notes to render.
 
 ## What should I do next?
 
-Nothing is queued. If picking up fresh work: (1) ask whether to push `eb3c34a`, `49cd6e4`, and
-`f8e46ef`; (2) try the notes/graph feature with real notes and eyeball the visual layout;
-(3) consider adding cleanup for superseded custom theme uploads (old Storage objects are never
-deleted when replaced — see `TASKS.md` technical debt); (4) the longer-standing deferred items
-(`ISSUE-006`'s `npm audit` advisories, a minimal test suite) are still open from before this
-session.
+Nothing is queued. If picking up fresh work: (1) try the notes/graph feature with real notes
+and eyeball the visual layout; (2) the longer-standing deferred items (`ISSUE-006`'s
+`npm audit` advisories, a minimal test suite) are still open from before this session.
 
 ## Which files are most important?
 
@@ -114,7 +110,7 @@ DEC-011).
 ## Which commands should I run first?
 
 ```bash
-git status                # expect: clean, HEAD at f8e46ef, main ahead of origin/main by 3
+git status                # expect: clean, HEAD at 620fa67, main up to date with origin/main
 npx tsc --noEmit          # should pass
 npm run build             # should pass
 npm run lint              # should pass (exit 0)
@@ -139,9 +135,9 @@ Read CLAUDE.md, PROJECT_STATE.md, TASKS.md, and HANDOFF.md in full before doing 
 
 Then:
 1. Run `git status` and `git log --oneline -10`. Expect: a clean working tree, HEAD at
-   f8e46ef ("Add Obsidian-style linked notes and custom theme background uploads"), main
-   ahead of origin/main by 3 commits (none of eb3c34a/49cd6e4/f8e46ef have been pushed). If
-   you see anything else (uncommitted files, a different HEAD), stop and reconcile before
+   620fa67 ("Document the notes/custom-image feature and add v0.8 changelog entry"), main up
+   to date with origin/main (everything through 620fa67 has been pushed). If you see anything
+   else (uncommitted files, a different HEAD, unpushed commits), stop and reconcile before
    proceeding.
 2. Run `npx tsc --noEmit`, `npm run build`, and `npm run lint` — all three should pass (exit
    0). If any fail, something regressed since this handoff; investigate before assuming the

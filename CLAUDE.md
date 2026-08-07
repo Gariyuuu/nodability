@@ -99,7 +99,7 @@ run**. Verified via `node_modules/next/dist/docs/01-app/03-api-reference/03-file
   request, is complete. See [PROJECT_STATE.md](PROJECT_STATE.md) for the exact stopping point
   and
   [TASKS.md](TASKS.md) for what's left (only the deliberately-deferred `next` version bump,
-  ISSUE-006). **`eb3c34a` has not been pushed** — ask before pushing.
+  ISSUE-006). Everything through `620fa67` has been pushed to `origin/main`.
 - **Highest-priority next task:** None urgent. The only open item is ISSUE-006 (3 remaining
   `npm audit` advisories requiring a `next` version bump past the pinned range) — deliberately
   deferred, not a "next task to just do."

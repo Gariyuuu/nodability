@@ -37,6 +37,12 @@ export async function POST(req: Request) {
       data: { publicUrl },
     } = supabase.storage.from(BUCKET).getPublicUrl(path);
 
+    const { data: existing } = await supabase.storage.from(BUCKET).list(userId);
+    const staleFiles = existing?.filter((f) => `${userId}/${f.name}` !== path) ?? [];
+    if (staleFiles.length > 0) {
+      await supabase.storage.from(BUCKET).remove(staleFiles.map((f) => `${userId}/${f.name}`));
+    }
+
     return NextResponse.json({ url: publicUrl });
   } catch (err) {
     if (err instanceof UnauthorizedError) {

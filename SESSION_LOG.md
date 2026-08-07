@@ -645,3 +645,38 @@ this file existed; dates are taken from `git log` where possible.
   screenshotted with real notes.
 - **Recommended next action:** Ask the user whether to push the 3 local commits; suggest
   trying the notes/graph feature with real notes to eyeball the visual layout.
+
+---
+
+## Session: 2026-08-06 (continued) — Pushed to origin, added upload cleanup
+
+- **Account/agent:** Continuation of the same account/session as the previous entry.
+- **Goal:** User said "ok next go push and do the rest." Pushed the 4 outstanding local
+  commits (`eb3c34a`, `49cd6e4`, `f8e46ef`, `620fa67`) to `origin/main`, then picked up the
+  one remaining actionable gap flagged in the previous entry's docs: superseded custom
+  theme-background uploads were never cleaned up from Storage.
+- **Files changed:** `app/api/theme-image/route.ts` — after a successful upload, lists every
+  file under the user's folder in the `theme-uploads` bucket and deletes all except the
+  just-uploaded one. Updated `TASKS.md`, `PROJECT_STATE.md`, `HANDOFF.md`, `FEATURES.md`,
+  `DATABASE.md` to reflect both the push and the cleanup fix.
+- **Commands run:** `git push origin main`; `npx tsc --noEmit`, `npm run lint`,
+  `npm run build` (all exit 0); a real end-to-end test against the live Storage bucket
+  (uploaded 2 "stale" files under a throwaway test user ID, then a 3rd, ran the same
+  list-and-remove logic the route now runs, confirmed only the 3rd file remained, cleaned up
+  all test artifacts).
+- **Tests run:** No automated tests exist. Verified via the real Storage operation above.
+- **Results:** All 4 commits now on `origin/main`. The cleanup fix works as intended and is
+  scoped to only ever delete files under the acting user's own folder path (`${userId}/`),
+  never another user's or another bucket's objects.
+- **Decisions made:** Chose "delete everything else in the user's folder on successful
+  upload" over tracking/passing the previous URL explicitly — simpler, and self-healing for
+  any pre-existing orphaned files from before this fix existed.
+- **Problems found:** None.
+- **Work completed:** Push + the one remaining actionable technical-debt item from this
+  session's own feature work.
+- **Work remaining:** Nothing tracked as active. Longer-standing deferred items unchanged:
+  `ISSUE-006` (`npm audit fix --force`), a minimal test suite, real-world visual check of the
+  notes graph with actual notes (requires the user's own login — magic-link auth has no
+  password an agent could use to sign in independently).
+- **Recommended next action:** None required. The cleanup fix is uncommitted at the time of
+  this log entry — commit it along with the doc updates in the same pass.

@@ -5,10 +5,10 @@ Active execution queue. IDs are stable — reference them in commits/`SESSION_LO
 ## Current task
 
 **None.** The Obsidian-style notes system + custom theme image uploads request is complete
-as of commit `f8e46ef` (**not yet pushed, along with `eb3c34a` and `49cd6e4`** — ask before
-pushing). Everything through `720e9a2` is pushed. See "Recently completed" below for what was
-done. The only open item in the whole repo is `ISSUE-006` (deliberately-deferred `npm audit`
-findings) under "Deferred" — not an active task.
+as of commit `f8e46ef`, documented as of `620fa67`. Everything through `620fa67` is pushed to
+`origin/main`. See "Recently completed" below for what was done. The only open item in the
+whole repo is `ISSUE-006` (deliberately-deferred `npm audit` findings) under "Deferred" — not
+an active task.
 
 ## Next up
 
@@ -53,9 +53,6 @@ tracked, and both are fixed.
   not a true mode/majority — misleading name vs. behavior (low impact, but worth fixing if
   life-area grouping adoption picks up now that `TODO-001`'s discoverability fix has shipped).
 - 3 of 4 `npm audit` high-severity advisories remain (`ISSUE-006`, see Deferred below).
-- Custom theme-background uploads are never cleaned up — replacing your photo orphans the
-  old one in the `theme-uploads` Storage bucket forever (see `FEATURES.md` §6b,
-  `DATABASE.md`'s Storage buckets section).
 - `app/api/theme-image/route.ts` trusts the client-reported file MIME type rather than
   inspecting file bytes — low risk at 2-user scale, see `SECURITY.md`'s File upload risks.
 - Notes' `[[Wikilink]]` resolution is title-based with no stored edges table — renaming a
@@ -82,8 +79,15 @@ section as new work happens.
 
 ## Recently completed
 
-1. **Obsidian-style linked notes system + custom theme background image uploads** — commit
-   `f8e46ef` (not yet pushed):
+1. **Cleanup for superseded custom theme-background uploads** (not yet committed — see
+   `app/api/theme-image/route.ts`): uploading a new custom background now lists the user's
+   existing files in the `theme-uploads` bucket and deletes every one except the
+   just-uploaded file, instead of leaving old uploads orphaned forever. Verified end-to-end
+   against the live Storage bucket (uploaded 2 "old" files, uploaded a 3rd, confirmed the
+   first 2 were deleted and only the 3rd remained; test artifacts cleaned up). `tsc`/`lint`/
+   `build` all exit 0.
+2. **Obsidian-style linked notes system + custom theme background image uploads** — commit
+   `f8e46ef` (pushed to `origin/main` as of `620fa67`):
    - New `/notes` page: create/edit notes, optionally tag to a category ("class"), link
      between notes with `[[Wikilink]]` syntax, view everything as a force-directed graph.
      New `notes` table (migration `006_notes.sql`) — no stored edges table, links resolve
@@ -100,8 +104,8 @@ section as new work happens.
      linked notes, confirmed duplicate-title rejection via Postgres `23505`, cleaned up);
      deployed via `vercel --prod --yes`; live route-gating confirmed via curl. Graph's visual
      rendering was not screenshot-verified (see Testing needed).
-2. **10 themes total, custom AI personalities, and a liveliness pass** — commit `eb3c34a`
-   (not yet pushed):
+3. **10 themes total, custom AI personalities, and a liveliness pass** — commit `eb3c34a`
+   (pushed to `origin/main` as of `620fa67`):
    - Added 6 new theme palettes (Rose, Mint, Lavender, Amber, Midnight, Coral), each with a
      self-hosted photo background (`public/theme/*.jpg`, sourced/verified the same way as
      the original 4) and full light/dark token set in `app/globals.css`. 10 palettes total.
@@ -116,7 +120,7 @@ section as new work happens.
      real-photos work had shipped without one) and added v0.7 for this session.
    - Verified: `tsc`/`lint`/`build` all exit 0; deployed; live curl on all 10 `/theme/*.jpg`
      paths + Playwright screenshots of 3 new palettes confirming legibility.
-2. **Fixed every open bug/tech-debt item in one session** — commit `18200e7`:
+4. **Fixed every open bug/tech-debt item in one session** — commit `18200e7`:
    - `BUG-001` — all 9 `npm run lint` errors fixed (`npm run lint` now exits 0). Real
      structural fix for `ThemeProvider.tsx` (lazy `useState` initializers replacing an
      effect); justified `eslint-disable-next-line` for the 3 fetch-on-mount cases; fixed
@@ -138,22 +142,22 @@ section as new work happens.
      deliberately deferred, see below).
    - Verified: `npx tsc --noEmit`, `npm run lint`, `npm run build` all exit 0; deployed via
      `vercel --prod --yes`; live curl + Playwright screenshot verification.
-3. Documentation/memory system (17 files) for account-switch handoff — commits `071f6a3`,
+5. Documentation/memory system (17 files) for account-switch handoff — commits `071f6a3`,
    `d92a96b`.
-4. Real Unsplash photo theme backgrounds (later self-hosted, see #2), Week/Month/Year
+6. Real Unsplash photo theme backgrounds (later self-hosted, see #3), Week/Month/Year
    calendar views, life-area grouping, `/templates` page, chat suggestion chips — commit
    `6b55515`.
-5. Decorative CSS-gradient theme art (superseded by #4) — commit `b3e614d`.
-6. Theming system (4 palettes × light/dark), starter-templates popover (superseded by #4's
+7. Decorative CSS-gradient theme art (superseded by #6) — commit `b3e614d`.
+8. Theming system (4 palettes × light/dark), starter-templates popover (superseded by #6's
    `/templates` page), chat persona "Nodo," `/changelog` page, generated app icon — commit
    `739a283`.
-7. Per-user authentication + data isolation (magic link, `user_id` scoping, RLS) plus 2
+9. Per-user authentication + data isolation (magic link, `user_id` scoping, RLS) plus 2
    follow-up fixes for silent failure modes found during real-world testing — commits
    `1d78489`, `426b01e`, `ffb225c`.
-8. Chat bot bug fix: was treating checked-off (`status: "done"`) tasks as still due — commit
-   `92bd19f`.
-9. Idea box feature — commit `6afc23e`.
-10. Original task board + chat panel + week view + Supabase backend — commit `f8d2284`.
+10. Chat bot bug fix: was treating checked-off (`status: "done"`) tasks as still due — commit
+    `92bd19f`.
+11. Idea box feature — commit `6afc23e`.
+12. Original task board + chat panel + week view + Supabase backend — commit `f8d2284`.
 
 ## Deferred
 
