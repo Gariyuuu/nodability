@@ -99,7 +99,29 @@ radius, not independently confirmed.
 
 ## File upload risks
 
-None — no file upload feature exists anywhere in the app.
+One upload feature exists: `POST /api/theme-image` (custom theme background photos).
+- **Auth:** Required (`requireUserId()`), same as every other route.
+- **Type validation:** Server-side allow-list (`image/jpeg`, `image/png`, `image/webp`,
+  `image/gif`) checked against `file.type` — this is the browser/client-reported MIME type,
+  **not verified by inspecting file bytes/magic numbers**. A malicious client could send an
+  arbitrary file with a spoofed `Content-Type` header claiming to be an image. Mitigating
+  factors: (a) only the app's 2 authenticated users can reach this endpoint at all; (b) the
+  uploaded file is only ever consumed by the browser as a CSS `background-image` — even a
+  disguised non-image file wouldn't execute as anything, it would just fail to render as a
+  background; (c) it's stored in an isolated bucket not served alongside application code.
+  **Residual risk is low given the 2-user threat model**, but this is a real gap if the
+  app's audience ever grows.
+- **Size validation:** 5MB cap, checked server-side (`file.size`) — not just client-side, so
+  can't be bypassed by a direct API call.
+- **Path handling:** Upload path is server-generated (`<userId>/<timestamp>.<ext>`), never
+  derived from the user-supplied filename — no path-traversal risk from a crafted filename.
+- **Storage bucket is public-read** — by design (see `DATABASE.md`), since the image needs
+  to be usable in unauthenticated CSS. This means anyone with the exact URL (a long
+  timestamp-based path, not guessable, but not secret either) could view an uploaded photo
+  without being one of the 2 app users. Low risk for theme background photos specifically,
+  but worth remembering if this bucket is ever reused for anything more sensitive.
+- **No malware/content scanning** — acceptable given the 2-trusted-user threat model, would
+  not be acceptable if this endpoint were ever exposed more broadly.
 
 ## Webhook verification
 
@@ -173,6 +195,9 @@ generic message if this app's threat model ever changes.
    check) — see Authorization boundaries above.
 5. No staging/dev database separation — Preview deployments on Vercel point at the same
    production Supabase project (see `DEPLOYMENT.md`).
+6. `POST /api/theme-image` trusts the client-reported file MIME type rather than inspecting
+   file contents — low risk at the current 2-trusted-user scale (see File upload risks
+   above), but a real gap if this endpoint's exposure ever changes.
 
 `/api/chat`'s missing error handling (previously gap #1 in this list) was **fixed** — the
 route now wraps its body in try/catch and returns a clean error response instead of an

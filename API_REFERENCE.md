@@ -97,6 +97,61 @@ inconsistency is worth normalizing if you touch this route.
 
 ---
 
+## `GET /api/notes`
+- **Source file:** `app/api/notes/route.ts`
+- **Purpose:** List the caller's notes, most recently updated first, each with its category
+  name/group joined in.
+- **Auth:** Required.
+- **Response 200:** `{ "notes": [ { "id", "title", "content", "category_id",
+  "category_name", "category_group", "created_at", "updated_at" } ] }`
+
+## `POST /api/notes`
+- **Source file:** `app/api/notes/route.ts`
+- **Purpose:** Create a note.
+- **Auth:** Required.
+- **Request body:** `{ "title": "string", "content"?: "string", "categoryId"?: "string" | null }`
+- **Response 200:** `{ "note": { ...Note } }`
+- **Validation:** 400 `{"error":"title is required"}` if `title` is missing/empty. 409
+  `{"error":"you already have a note with that title"}` if the title collides case-
+  insensitively with an existing note (DB unique constraint, Postgres code `23505`).
+
+## `PATCH /api/notes`
+- **Source file:** `app/api/notes/route.ts`
+- **Purpose:** Update a note's title, content, and/or category. Partial updates supported —
+  only fields present in the body are changed.
+- **Auth:** Required.
+- **Request body:** `{ "id": "string", "title"?: "string", "content"?: "string", "categoryId"?: "string" | null }`
+- **Response 200:** `{ "note": { ...Note } }`
+- **Validation:** 400 if `id` missing; 409 on title collision (same as POST).
+
+## `DELETE /api/notes`
+- **Source file:** `app/api/notes/route.ts`
+- **Purpose:** Delete a note. (Does not affect other notes' `[[Wikilinks]]` pointing to it —
+  those links simply stop resolving, same as Obsidian's own behavior for a deleted note.)
+- **Auth:** Required.
+- **Request body:** `{ "id": "string" }`
+- **Response 200:** `{ "ok": true }`
+
+---
+
+## `POST /api/theme-image`
+- **Source file:** `app/api/theme-image/route.ts`
+- **Purpose:** Upload a custom theme background photo. Stores it in the `theme-uploads`
+  Supabase Storage bucket and returns its public URL for the client to apply as the "Custom"
+  palette's background.
+- **Auth:** Required.
+- **Request body:** `multipart/form-data` with a single field `image` (the file). **Not**
+  JSON, unlike every other route in this app.
+- **Response 200:** `{ "url": "https://<project>.supabase.co/storage/v1/object/public/theme-uploads/<userId>/<timestamp>.<ext>" }`
+- **Validation:** 400 if no `image` field or it's not a file; 400 if content-type isn't one
+  of `image/jpeg`, `image/png`, `image/webp`, `image/gif`; 400 if larger than 5MB.
+- **Side effects:** Uploads to Storage under `<userId>/<timestamp>.<ext>` (service-role
+  client, bypasses Storage RLS — no client-side write policy exists or is needed). **No
+  cleanup of previously-uploaded images** — replacing your custom background doesn't delete
+  the old file, it just stops being referenced (see `DATABASE.md`'s Storage buckets section).
+- **Errors:** 401 unauthorized; 500 `{"error":"upload failed"}` on any Storage error
+  (logged server-side via `console.error`, same pattern as `/api/chat`).
+
 ## `POST /api/templates`
 - **Source file:** `app/api/templates/route.ts`
 - **Purpose:** Apply a starter template — creates its categories (if not already present) and

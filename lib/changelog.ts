@@ -9,6 +9,15 @@ export interface ChangelogEntry {
 // mentioning. Newest first.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.8",
+    date: "2026-08-06",
+    title: "Linked notes and custom backgrounds",
+    notes: [
+      "New Notes page — take notes per class, link them together with [[double brackets]] like Obsidian, and view your whole web of ideas as a graph",
+      "Upload your own photo as a theme background instead of picking from the built-in palettes",
+    ],
+  },
+  {
     version: "0.7",
     date: "2026-08-06",
     title: "10 themes, custom AI personalities, and a livelier look",

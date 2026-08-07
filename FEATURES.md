@@ -209,6 +209,40 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
 
 ---
 
+## 6b. Custom theme background images
+
+- **Purpose:** Let a user upload their own photo as the theme background instead of picking
+  from the 10 curated palettes.
+- **User flow:** Open the 🎨 theme popover → "📷 Upload your own background" → pick an image
+  file → it uploads, and the app immediately switches to the "Custom" palette showing that
+  photo.
+- **Status: Verified complete.** End-to-end tested during development (a real upload to the
+  live `theme-uploads` bucket, confirmed publicly fetchable, then cleaned up) in addition to
+  the usual `tsc`/`lint`/`build` checks.
+- **Frontend:** `components/theme/ThemeToggle.tsx` (file input, upload handling, swatch
+  preview), `components/theme/ThemeProvider.tsx` (applies the uploaded URL as an inline
+  `--bg-art` CSS custom property when palette is `"custom"`), `lib/theme.ts`
+  (`customBgArt()` builds the scrim+photo value; `NO_FLASH_SCRIPT` replicates this so a
+  custom background doesn't flash-then-appear on reload).
+- **Backend:** `POST /api/theme-image` (auth required, validates file type/size, uploads via
+  the service-role client, returns a public URL).
+- **Database:** None directly — the chosen image's URL lives in `localStorage`
+  (`nodability-custom-bg`), same per-browser pattern as theme/palette/personality choice. The
+  actual file lives in Supabase Storage (`theme-uploads` bucket, see `DATABASE.md`).
+- **Permissions:** Upload requires auth; the bucket is public-read (by design — CSS
+  `background-image` needs an unauthenticated URL, and the photos aren't sensitive).
+- **Validation:** Content-type allow-list (JPEG/PNG/WebP/GIF), 5MB size cap, both enforced
+  server-side in the API route (not just client-side).
+- **Error states:** Upload failure shows an inline error message in the theme popover
+  (`uploadError` state in `ThemeToggle.tsx`).
+- **Known issues:** Old uploads are never cleaned up — replacing your custom background
+  leaves the previous file in Storage, orphaned. Low impact at 2-user scale but would
+  accumulate unbounded storage use over a long time. See `TASKS.md`.
+- **Remaining work / future improvements:** Delete the previous custom image when a new one
+  is uploaded, or add a "remove custom background" control.
+
+---
+
 ## 7. Starter templates
 
 - **Purpose:** One-click seed of categories + a few example tasks for a chosen "starting
@@ -268,6 +302,54 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
 - **Status: Verified complete.**
 - **Frontend:** `app/icon.tsx`, `app/apple-icon.tsx` (generated via `next/og`).
 - **Known issues:** None. (`app/favicon.ico`, the old Create-Next-App default, was deleted.)
+
+---
+
+## 11. Notes (Obsidian-style linked notes)
+
+- **Purpose:** A note-taking system separate from tasks/ideas, where notes can reference each
+  other via `[[Wikilink]]` syntax and be viewed as a connected graph — modeled directly on
+  Obsidian's note-linking mechanic, scoped per user, optionally organized by class (category).
+- **User flow:** `/notes` → "+ New note" → type a title, optionally pick a class/category,
+  write content (typing `[[Another Note's Title]]` creates a link once that note exists) →
+  Save. Switch to the "🕸️ Graph" tab to see every note as a node and every resolved wikilink
+  as an edge, color-coded by the note's category group; click a node to jump to editing it.
+- **Status: Verified complete.** End-to-end tested during development directly against the
+  live database (insert two notes with a link between them, confirm the case-insensitive
+  unique-title constraint correctly rejects a duplicate, clean up) in addition to
+  `tsc`/`lint`/`build`. The graph's visual rendering was not separately screenshot-verified
+  (unlike the theme palette work) — worth a manual check with real notes.
+- **Frontend:** `app/notes/page.tsx` (list/editor, grouped by category like the task board),
+  `components/notes/NoteGraph.tsx` (SVG graph rendering).
+- **Backend:** `GET/POST/PATCH/DELETE /api/notes`, `lib/notes.ts` (CRUD, wikilink extraction,
+  graph building), `lib/graph-layout.ts` (force-directed node positioning).
+- **Database:** `notes` table (migration `006`) — `title`, `content`, optional `category_id`,
+  owner-scoped like every other table.
+- **Permissions:** Auth required, `userId`-scoped, same pattern as tasks/ideas.
+- **Validation:** `title` required and non-empty; case-insensitive per-user title uniqueness
+  enforced at the DB level (`23505` → friendly 409 in the API route).
+- **Linking mechanism (important design detail):** Links are **not stored** — every note's
+  `content` is scanned for `[[Title]]` patterns at read time
+  (`lib/notes.ts:extractWikilinkTitles`, `buildNoteGraph`) and resolved by case-insensitive
+  title match among the same user's notes. A link to a nonexistent or misspelled title is
+  silently omitted from the graph (no error, no "unlinked reference" UI — simpler than real
+  Obsidian in this respect).
+- **Error states:** Save errors (e.g. duplicate title) show inline in the editor.
+- **Loading states:** "⏳ Loading…" while fetching notes+categories.
+- **Empty states:** Sidebar shows "No notes yet"; the graph view shows a prompt to add a note
+  and start linking.
+- **Edge cases handled:** Renaming a note doesn't break existing `[[Links]]` to its *new*
+  title going forward, but any note that already linked to the *old* title will silently stop
+  resolving that link (since resolution is title-based, not ID-based) — this is an inherent
+  tradeoff of the "no stored edges" design, not a bug, but worth knowing.
+- **Tests:** None automated.
+- **Known issues:** None found in code review. The rename-breaks-old-links behavior above is
+  a known *design characteristic*, not a bug — flagging it so a future session doesn't
+  "fix" it without realizing it's the deliberate simple-linking-model tradeoff.
+- **Remaining work / future improvements:** Autocomplete for `[[Wikilink]]` titles while
+  typing (currently the user has to remember/type the exact title); a way to see truly
+  "unlinked" note pairs; per-category graph filtering (currently the graph always shows all
+  notes, colored by category, rather than being filterable like the calendar's group filter).
 
 ---
 

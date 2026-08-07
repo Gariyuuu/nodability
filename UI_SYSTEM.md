@@ -145,11 +145,15 @@ changes are instant, not animated).
 
 ## Image asset conventions
 
-The 4 theme background photos are self-hosted at `public/theme/{slate,ocean,sunset,forest}.jpg`
-(originally hotlinked from `images.unsplash.com`, downloaded for durability — see
-`public/theme/SOURCES.md` for provenance), referenced via plain CSS `url()` in
-`app/globals.css` — there is no `next/image` usage anywhere in this app. The unused
-Create-Next-App scaffold SVGs that used to live in `public/` have been deleted.
+The 10 curated theme background photos are self-hosted at `public/theme/<name>.jpg`
+(originally the first 4 were hotlinked from `images.unsplash.com`, downloaded for
+durability — see `public/theme/SOURCES.md` for provenance), referenced via plain CSS `url()`
+in `app/globals.css`. **User-uploaded custom backgrounds are different**: they live in
+Supabase Storage (bucket `theme-uploads`, not `public/`), applied via an inline CSS custom
+property set by JavaScript (`ThemeProvider.tsx`) rather than a static stylesheet rule, since
+the URL is per-user data unknown at build time. There is no `next/image` usage anywhere in
+this app, for either kind of image. The unused Create-Next-App scaffold SVGs that used to
+live in `public/` have been deleted.
 
 ## Accessibility
 

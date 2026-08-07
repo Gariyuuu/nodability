@@ -559,3 +559,89 @@ this file existed; dates are taken from `git log` where possible.
   not a specified list).
 - **Recommended next action:** Ask the user whether to push `eb3c34a`, and whether the 5
   personalities (names/voices) are to their taste or should be adjusted.
+
+---
+
+## Session: 2026-08-06 — Obsidian-style linked notes + custom theme background uploads
+
+- **Account/agent:** Continuation of the same account/session as the previous entry.
+- **Goal:** User request: "add like ability to add custom images to the system and an
+  obsidian system... its like a neural network format of studying, connecting different
+  notes to each other in a neural network for each class." Broken into two features via 3
+  clarifying questions (all answered with the recommended option): (1) custom image upload
+  scoped to theme backgrounds only, not a general attachment system; (2) Obsidian-style
+  `[[wikilink]]` note connections, not a manual link picker; (3) notes optionally tagged to a
+  category ("class"), not a hard per-class boundary.
+- **Files inspected:** `lib/theme.ts`, `components/theme/ThemeProvider.tsx`,
+  `components/theme/ThemeToggle.tsx`, `app/globals.css`, `lib/tasks.ts` (as the CRUD/API
+  pattern to copy), `app/api/tasks/route.ts`, `supabase/schema.sql`.
+- **Files changed:**
+  - Added `supabase/migrations/006_notes.sql` (new `notes` table: `user_id`, optional
+    `category_id`, `title`, `content`, RLS owner policy, case-insensitive unique title per
+    user) and `supabase/migrations/007_theme_uploads_bucket.sql` (new public Storage bucket
+    `theme-uploads`).
+  - Added `lib/notes.ts`: full CRUD plus `extractWikilinkTitles` (regex over `[[Title]]` /
+    `[[Title|alias]]` syntax) and `buildNoteGraph` (resolves links dynamically by
+    case-insensitive title match — no stored edges table).
+  - Added `lib/graph-layout.ts`: hand-rolled force-directed layout (repulsion + spring +
+    centering + damping over 300 iterations) — no new npm dependency.
+  - Added `app/api/notes/route.ts` (GET/POST/PATCH/DELETE, follows the exact pattern of
+    `app/api/tasks/route.ts`; catches Postgres `23505` for duplicate titles → 409) and
+    `app/api/theme-image/route.ts` (POST, validates MIME type + 5MB size limit, uploads to
+    the `theme-uploads` bucket under `${userId}/${timestamp}.${ext}`, returns the public URL).
+  - Added `app/notes/page.tsx` (list grouped by category, editor, outgoing/incoming wikilink
+    display, Editor/Graph tabs) and `components/notes/NoteGraph.tsx` (SVG force-directed
+    graph renderer).
+  - `lib/theme.ts`: added `"custom"` to the `Palette` type, `CUSTOM_BG_STORAGE_KEY`, and
+    `customBgArt(url, mode)`; updated `NO_FLASH_SCRIPT` to apply a custom background inline
+    before first paint.
+  - `app/globals.css`: added `:root[data-palette="custom"]` light/dark token blocks (neutral,
+    no static `--bg-art` — that's set at runtime).
+  - `components/theme/ThemeProvider.tsx`: added `customBgUrl` state + `setCustomBgUrl`;
+    `applyTheme()` now sets/removes the inline `--bg-art` property for the custom palette.
+  - `components/theme/ThemeToggle.tsx`: added a file input + upload handler, a "Custom"
+    swatch, and an "Upload your own background" button.
+  - `app/page.tsx`: added a "🧠 Notes" nav link.
+  - Updated `CLAUDE.md`, `PROJECT_STATE.md`, `TASKS.md`, `DATABASE.md`, `API_REFERENCE.md`,
+    `FEATURES.md`, `SECURITY.md`, `ARCHITECTURE.md`, `UI_SYSTEM.md`, `FILE_MAP.md`,
+    `HANDOFF.md`, `DECISIONS.md` (DEC-011, DEC-012), `lib/changelog.ts` (v0.8), and this
+    `SESSION_LOG.md` entry.
+- **Commands run:** `npx tsc --noEmit`, `npm run lint`, `npm run build` (all exit 0); local
+  `npm run dev` + `curl` confirming `/notes` → 307, `/api/notes` → 401, `/api/theme-image`
+  POST → 401 when logged out; a real 1×1 PNG uploaded directly to `theme-uploads` via the
+  service-role client, confirmed publicly fetchable (`200 image/png`), then deleted; two real
+  notes inserted via the service-role client with a wikilink between them, a duplicate-title
+  insert confirmed rejected with Postgres `23505`, both cleaned up; `git commit`;
+  `vercel --prod --yes`; live `curl` re-confirming the same three route-gating checks against
+  production.
+- **Tests run:** No automated tests exist. All verification was `tsc`/`lint`/`build` plus the
+  real Storage/database operations described above — deliberately not just "the migration ran
+  without error."
+- **Results:** All checks passed. Deployed and live-verified. The notes system and custom
+  background upload are both fully wired end-to-end (UI → API → DB/Storage).
+- **Decisions made:**
+  - No stored links/edges table for notes — `[[Wikilink]]` resolution happens live by
+    case-insensitive title match at read time (see `DECISIONS.md` DEC-011). Deliberate
+    tradeoff: simpler at personal-app scale, but renaming a note breaks old links to its
+    previous title.
+  - The "Custom" palette applies its `--bg-art` via an inline JS-set CSS property rather than
+    a static `globals.css` rule, since the URL is per-user data unknown at build time (see
+    `DECISIONS.md` DEC-012).
+  - Custom background choice persists to `localStorage`, consistent with the existing theme/
+    personality pattern — no `profiles` table was introduced.
+- **Problems found (discovered and fixed within this same session):**
+  1. `app/notes/page.tsx` initially used a broken fetch-on-mount pattern (`useMemo` +
+     `useState`'s lazy initializer used as a fake mount effect, which actually runs during
+     the render phase) — replaced with the standard `useEffect` + justified
+     `eslint-disable-next-line react-hooks/set-state-in-effect` pattern used everywhere else.
+  2. `NoteGraph.tsx`'s `useMemo` dependency array used inline `.map().join()` expressions,
+     which a *different* ESLint rule (`react-hooks/use-memo`, not `exhaustive-deps`) flags as
+     non-simple — fixed by precomputing `nodeKey`/`edgeKey` as plain variables above the call.
+  3. An unused `selectedNote` variable in `app/notes/page.tsx` was removed.
+- **Work completed:** Both parts of the user's request, deployed and verified.
+- **Work remaining:** Nothing tracked as an active task. Commits `eb3c34a`, `49cd6e4`, and
+  `f8e46ef` have **not** been pushed — only committing/deploying was implied by this request.
+  The note graph's visual rendering was verified at the data-logic level only, not
+  screenshotted with real notes.
+- **Recommended next action:** Ask the user whether to push the 3 local commits; suggest
+  trying the notes/graph feature with real notes to eyeball the visual layout.

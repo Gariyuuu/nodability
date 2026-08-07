@@ -214,3 +214,58 @@ reasoning directly). No developer was interviewed to produce this file — do no
   reasons, both settings would be reasonable candidates to migrate there together.
 - **Affected files:** `components/ChatPanel.tsx`.
 - **Verification status:** Inferred.
+
+---
+
+### DEC-011 — Notes have no stored links/edges table; `[[Wikilink]]`s resolve dynamically
+- **Date:** 2026-08-06 (commit `f8e46ef`)
+- **Status:** Accepted, in effect
+- **Context:** The user asked for an Obsidian-style "neural network" of connected notes.
+  Obsidian itself resolves `[[Wikilink]]`s dynamically against note titles rather than
+  storing a separate graph-edges table, and this app's scale (one person's personal notes,
+  likely dozens not thousands) doesn't need the query performance a stored-edges table would
+  buy.
+- **Decision:** `lib/notes.ts:extractWikilinkTitles` regex-parses `[[Title]]`/`[[Title|alias]]`
+  syntax out of note content at read time; `buildNoteGraph` resolves those titles against the
+  same user's other notes by case-insensitive match to build the graph shown in the UI. No
+  migration adds an edges/links table.
+- **Reasoning:** Simpler schema (one new table instead of two), matches Obsidian's own actual
+  behavior (so the "connects like Obsidian" framing in the user's request is literally true,
+  not just visually similar), and avoids a write-time sync problem (keeping a stored edges
+  table consistent with edits to note content).
+- **Alternatives considered:** A `note_links` join table populated on every note save.
+  Rejected — more moving parts, and would need a backfill/repair step any time regex parsing
+  logic changes.
+- **Consequences:** Renaming a note breaks every existing `[[link]]` that pointed at its old
+  title (they simply stop resolving, rather than being migrated) — this is a deliberate
+  tradeoff, not a bug, and matches Obsidian's own default behavior without its "update links
+  on rename" feature. See `FEATURES.md` §11 and `TASKS.md` technical debt.
+- **Affected files:** `lib/notes.ts`, `supabase/migrations/006_notes.sql`,
+  `components/notes/NoteGraph.tsx`.
+- **Verification status:** Verified (explicit design goal during implementation).
+
+---
+
+### DEC-012 — Custom theme background applies `--bg-art` via inline JS style, not static CSS
+- **Date:** 2026-08-06 (commit `f8e46ef`)
+- **Status:** Accepted, in effect
+- **Context:** The existing 10 curated palettes each define `--bg-art` as a static rule in
+  `app/globals.css`, known at build time. A user-uploaded custom background is per-user data
+  (a Storage URL) that doesn't exist at build time and can't be baked into a stylesheet rule.
+- **Decision:** Treat `"custom"` as an 11th palette value. Its light/dark token blocks in
+  `globals.css` define every variable except `--bg-art`; that one property is set directly on
+  `document.documentElement.style` at runtime by `ThemeProvider.tsx` (and replicated in
+  `NO_FLASH_SCRIPT` so there's no flash-of-missing-background before React hydrates).
+- **Reasoning:** Reuses 100% of the existing `data-palette`/`data-theme` mechanism and every
+  component's existing `bg-bg`/`text-fg`/etc. Tailwind classes — no parallel styling system
+  needed for the one palette whose background isn't known ahead of time.
+- **Alternatives considered:** A separate React-rendered `<div>` with an inline
+  `backgroundImage` style, bypassing the CSS-variable system entirely. Rejected — would
+  duplicate the scrim-gradient-over-photo logic already expressed once in
+  `lib/theme.ts:customBgArt` and once per palette in `globals.css`, and would need its own
+  z-index/positioning instead of reusing the existing `body::before` rule.
+- **Consequences:** The no-flash script (`NO_FLASH_SCRIPT`) now has to duplicate this
+  runtime-style-setting logic, not just attribute-setting — a second place to keep in sync if
+  the custom-background logic ever changes.
+- **Affected files:** `lib/theme.ts`, `components/theme/ThemeProvider.tsx`, `app/globals.css`.
+- **Verification status:** Verified (explicit design goal during implementation).

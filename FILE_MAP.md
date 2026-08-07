@@ -167,6 +167,43 @@ Practical map of files a future coding agent is likely to touch. Trivial generat
   in `supabase/migrations/005_category_group.sql` (`group_name in (...)`). Changing one
   without the other breaks category updates.
 
+## `app/notes/page.tsx`, `lib/notes.ts`, `app/api/notes/route.ts`, `components/notes/NoteGraph.tsx`
+- **Purpose:** The Obsidian-style linked-notes feature. `lib/notes.ts` has all DB CRUD plus
+  the pure functions `extractWikilinkTitles` (regex-parses `[[Title]]` syntax) and
+  `buildNoteGraph` (resolves titles to note IDs, dedupes edges). `NoteGraph.tsx` renders the
+  result as SVG.
+- **Called by:** `app/notes/page.tsx` orchestrates all of the above; nothing else in the app
+  touches notes.
+- **Edit when:** changing note linking syntax/behavior (edit `extractWikilinkTitles`'s regex
+  and `buildNoteGraph` together — they must agree on what counts as a link), or the note
+  editor/graph UI.
+- **Risk:** Medium. The unique-title-per-user DB constraint (migration `006`) and the
+  title-based (not ID-based) link resolution are coupled — renaming a note breaks old
+  `[[Links]]` to its previous title by design (see `FEATURES.md` §11). Don't "fix" this
+  without realizing it's the deliberate simple-linking-model tradeoff, not a bug.
+
+## `lib/graph-layout.ts`
+- **Purpose:** Hand-rolled force-directed graph layout (repulsion + spring + centering,
+  fixed iteration count) — positions note nodes for `NoteGraph.tsx`. No graph/viz library
+  dependency.
+- **Called by:** `components/notes/NoteGraph.tsx` only.
+- **Edit when:** tuning the graph's visual spacing/settle behavior (see the constants at the
+  top: `REPULSION`, `SPRING_LENGTH`, etc.) or if note counts grow large enough that the O(n²)
+  repulsion pass becomes slow (fine for dozens of notes, would need a spatial-partitioning
+  optimization for hundreds+).
+- **Risk:** Low — purely visual, no data correctness implications.
+
+## `app/api/theme-image/route.ts`
+- **Purpose:** Handles custom theme background photo uploads to the `theme-uploads` Supabase
+  Storage bucket.
+- **Called by:** `components/theme/ThemeToggle.tsx` (the only caller).
+- **Edit when:** changing upload validation (allowed types, size cap) or storage path scheme.
+- **Risk:** Medium — this is the app's only file-upload endpoint and only place that uses
+  `supabase.storage` instead of `supabase.from()`. Trusts the client-reported MIME type
+  rather than inspecting file bytes (see `SECURITY.md`'s File upload risks section) — a
+  known, accepted gap at this app's 2-user scale, not an oversight to silently "fix" by
+  adding heavier validation without discussing the tradeoff.
+
 ## `app/templates/page.tsx`, `lib/templates.ts`, `app/api/templates/route.ts`
 - **Purpose:** Starter-template browsing/application. `lib/templates.ts` is pure data (3
   templates: Student, Work, Home & Life).
@@ -285,3 +322,13 @@ Practical map of files a future coding agent is likely to touch. Trivial generat
   the `group_name` CHECK constraint in `supabase/migrations/005_category_group.sql`.
 - **Change the chat assistant's behavior:** `lib/prompts.ts` (tone/rules),
   `lib/categorize.ts` (what gets extracted), `app/api/chat/route.ts` (context-building logic).
+- **Add/edit an AI personality:** `lib/personalities.ts` only — the shared behavioral rules
+  in `lib/prompts.ts`'s `CORE_RULES` apply automatically to any new entry.
+- **Change note-linking behavior:** `lib/notes.ts` (`extractWikilinkTitles`,
+  `buildNoteGraph`) — edit both together, they must agree on link syntax/resolution.
+- **Add a file-upload feature:** copy the pattern in `app/api/theme-image/route.ts`
+  (`req.formData()`, service-role `supabase.storage` client, type/size validation) — it's the
+  only precedent for file uploads in this app.
+- **Add a Storage bucket:** a new numbered migration doing
+  `insert into storage.buckets (id, name, public) values (...)`, same as
+  `supabase/migrations/007_theme_uploads_bucket.sql`.

@@ -151,8 +151,13 @@ abstraction beyond `supabase-js`'s own `.from().select()...` chain.
 
 ## Storage flow
 
-No file/object storage is used anywhere in this app (no Supabase Storage buckets, no S3, no
-image uploads). The only "images" are hotlinked Unsplash URLs referenced directly in CSS.
+One Supabase Storage bucket, `theme-uploads` (public-read, created by migration `007`).
+Flow: browser file input → `POST /api/theme-image` (multipart form data) → route validates
+auth/type/size → uploads via the **service-role** client (bypasses Storage RLS entirely,
+same trust model as every DB write in this app) → returns the bucket's public URL → client
+stores that URL in `localStorage` and applies it as an inline CSS custom property
+(`ThemeProvider.tsx`). The 10 curated theme photos are **not** in this bucket — they're
+static files in `public/theme/`, served by Next.js directly, no Storage/DB involvement.
 
 ## External API integration flow
 

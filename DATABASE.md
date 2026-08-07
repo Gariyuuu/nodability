@@ -3,12 +3,16 @@
 - **Provider:** Supabase (managed Postgres), project ref `hwvqnenmnrzdncwznorv`
   (`NEXT_PUBLIC_SUPABASE_URL=https://hwvqnenmnrzdncwznorv.supabase.co`).
 - **Schema source:** `supabase/schema.sql` (base) + `supabase/migrations/002_date_range_and_time.sql`,
-  `003_ideas.sql`, `004_user_scoping.sql`, `005_category_group.sql`, applied **manually, in
-  numeric order**, by pasting into the Supabase SQL Editor. There is no Supabase CLI
-  (`supabase/config.toml` does not exist), no automated migration runner, and no `down`
-  migrations — this is forward-only.
-- **Live row counts at audit time (2026-08-06):** `tasks` 19, `messages` 112, `ideas` 7,
-  `categories` 3. **This is real production data belonging to 2 real people.**
+  `003_ideas.sql`, `004_user_scoping.sql`, `005_category_group.sql`, `006_notes.sql`,
+  `007_theme_uploads_bucket.sql`, applied **manually, in numeric order**, by pasting into the
+  Supabase SQL Editor. There is no Supabase CLI (`supabase/config.toml` does not exist), no
+  automated migration runner, and no `down` migrations — this is forward-only. **`007` is not
+  a table migration** — it inserts a row into `storage.buckets` to create the `theme-uploads`
+  Storage bucket (Verified live: `public: true`).
+- **Live row counts at audit time (2026-08-06, before the notes feature shipped):** `tasks` 19,
+  `messages` 112, `ideas` 7, `categories` 3, `notes` 0 (brand new table; a smoke-test insert/
+  delete was performed during development, table confirmed empty of real data at last check).
+  **This is real production data belonging to 2 real people.**
 
 ## ⚠️ Known inconsistency: `schema.sql` does not replay cleanly against the migrations
 
@@ -94,6 +98,30 @@ run `schema.sql` alone, which already has the right shape, then skip straight to
 
 - **Indexes:** `ideas_created_at_idx(created_at)`, `ideas_user_id_idx(user_id)` (`004`).
 - **RLS:** Enabled (`004`). Policy `ideas_owner`.
+
+### `notes`
+| Column | Type | Constraints | Added in |
+|---|---|---|---|
+| `id` | uuid | PK, default `gen_random_uuid()` | `006` |
+| `user_id` | uuid | not null, FK → `auth.users(id)` | `006` |
+| `category_id` | uuid | FK → `categories(id)`, nullable — a note's optional "class" | `006` |
+| `title` | text | not null | `006` |
+| `content` | text | not null, default `''` — may contain `[[Wikilink]]` references to other note titles | `006` |
+| `created_at` | timestamptz | not null, default `now()` | `006` |
+| `updated_at` | timestamptz | not null, default `now()` — set explicitly by `lib/notes.ts:updateNote` on every edit, not a DB trigger | `006` |
+
+- **Indexes:** `notes_user_id_idx(user_id)`, `notes_category_id_idx(category_id)`, and a
+  **unique** index `notes_user_id_title_key` on `(user_id, lower(title))` — case-insensitive
+  per-user title uniqueness, so a `[[Wikilink]]` resolves to exactly one note. A duplicate
+  title insert/update fails with Postgres error code `23505`, which
+  `app/api/notes/route.ts` catches and turns into a friendly `409` response.
+- **RLS:** Enabled (`006`). Policy `notes_owner`, same owner-only shape as every other table.
+- **Linking model:** There is **no edges/links table**. `[[Wikilink]]` connections are
+  resolved dynamically at read time by title match (`lib/notes.ts:buildNoteGraph`), not
+  stored — simplest correct approach at this app's personal scale (dozens of notes, not
+  thousands). A link to a not-yet-created or misspelled title is simply omitted from the
+  graph, same as Obsidian's own "unlinked reference" behavior conceptually, though this app
+  doesn't surface unlinked references as a separate UI concept.
 
 ### `auth.users` (Supabase-managed, not defined in this repo's SQL)
 Referenced by every table's `user_id` FK. Managed entirely by Supabase Auth. New rows are
@@ -190,7 +218,14 @@ grow unbounded without any pruning logic.
 
 ## Storage buckets
 
-None — no Supabase Storage is used anywhere in this app.
+One: **`theme-uploads`** (created by migration `007`, `public: true` — Verified live).
+Holds user-uploaded custom theme background photos only (`app/api/theme-image/route.ts`),
+stored under `<userId>/<timestamp>.<ext>`. Public read (needed so the image is usable in a
+plain CSS `background-image: url(...)` without an auth header); all writes go through the
+service-role client in that one API route, so no client-side Storage RLS policy exists or is
+needed for writes. No lifecycle/cleanup policy exists — uploads accumulate indefinitely and
+are never deleted even if the user later switches away from the "Custom" palette or uploads a
+replacement (the old object is simply orphaned, not removed).
 
 ## Generated types
 

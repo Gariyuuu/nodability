@@ -77,22 +77,27 @@ run**. Verified via `node_modules/next/dist/docs/01-app/03-api-reference/03-file
 - **Current stable state:** Deployed and working. Build succeeds (`npm run build`, exit 0).
   TypeScript type-checks clean (`npx tsc --noEmit`, exit 0). **ESLint now passes cleanly too**
   (`npm run lint`, exit 0) — all 9 original errors were fixed, see [Known issues](#known-issues).
-- **Latest completed milestone:** A feature session (commit `eb3c34a`, **not yet pushed**)
-  expanded theming from 4 to **10 palettes** (Slate, Ocean, Sunset, Forest, Rose, Mint,
-  Lavender, Amber, Midnight, Coral), built a **multi-personality AI chat system** (Nodo is
-  now one of 5 selectable characters — see [FEATURES.md](FEATURES.md)), and did a
-  liveliness/emoji pass across the UI. Before that: a follow-up session fixed every tracked
-  bug/tech-debt item from the documentation audit in one pass (commit `18200e7`): all 9 lint
-  errors, `/api/chat` error handling, template re-application duplicating tasks, the unused
-  `is_recall_query` field, unused scaffold assets, self-hosted theme background photos (was
-  hotlinked from Unsplash), improved life-area-grouping discoverability, and the safe half of
-  the `npm audit` findings. Before that: a large feature pass adding real per-user
-  authentication, a Week/Month/Year calendar with Academic/Personal/Work/Other grouping, a
-  starter-templates page, a changelog page, and chat suggestion chips. See `git log` and
-  [CHANGELOG.md](CHANGELOG.md) for the full commit-by-commit history.
-- **Current active task:** None. Every tracked task (`DOC-001`, `BUG-001`, `BUG-002`,
-  `TODO-001` through `TODO-007`, and the 10-themes/personalities/liveliness request) is
-  complete. See [PROJECT_STATE.md](PROJECT_STATE.md) for the exact stopping point and
+- **Latest completed milestone:** A feature session (commit `f8e46ef`) added an
+  **Obsidian-style linked notes system** (`/notes` — notes optionally tagged to a category
+  "class", linked via `[[Wikilink]]` syntax, with a force-directed graph view) and **custom
+  theme background uploads** (an 11th "Custom" palette slot backed by a new public Supabase
+  Storage bucket, `theme-uploads`) — see [FEATURES.md](FEATURES.md). This is the app's first
+  file-upload feature and first new data table since the original schema. Before that: a
+  session (commit `eb3c34a`) expanded theming from 4 to **10 palettes** (Slate, Ocean, Sunset,
+  Forest, Rose, Mint, Lavender, Amber, Midnight, Coral) and built a **multi-personality AI
+  chat system** (Nodo is now one of 5 selectable characters), plus a liveliness/emoji pass.
+  Before that: a follow-up session fixed every tracked bug/tech-debt item from the
+  documentation audit in one pass (commit `18200e7`): all 9 lint errors, `/api/chat` error
+  handling, template re-application duplicating tasks, the unused `is_recall_query` field,
+  unused scaffold assets, self-hosted theme background photos (was hotlinked from Unsplash),
+  improved life-area-grouping discoverability, and the safe half of the `npm audit` findings.
+  Before that: a large feature pass adding real per-user authentication, a Week/Month/Year
+  calendar with Academic/Personal/Work/Other grouping, a starter-templates page, a changelog
+  page, and chat suggestion chips. See `git log` and [CHANGELOG.md](CHANGELOG.md) for the full
+  commit-by-commit history.
+- **Current active task:** None. Every tracked task, plus the notes-system/custom-image
+  request, is complete. See [PROJECT_STATE.md](PROJECT_STATE.md) for the exact stopping point
+  and
   [TASKS.md](TASKS.md) for what's left (only the deliberately-deferred `next` version bump,
   ISSUE-006). **`eb3c34a` has not been pushed** — ask before pushing.
 - **Highest-priority next task:** None urgent. The only open item is ISSUE-006 (3 remaining
@@ -128,7 +133,7 @@ All versions below are the **exact resolved versions** from `package-lock.json` 
 | AI models used | `claude-haiku-4-5-20251001` (extraction), `claude-sonnet-5` (chat reply) | — |
 | Hosting | Vercel | — |
 | Auth provider | Supabase Auth (magic link / OTP, PKCE flow) | — |
-| Storage provider | None used | n/a |
+| Storage provider | Supabase Storage — one public bucket, `theme-uploads` (user-uploaded custom theme backgrounds only; curated theme photos and app assets still live in `public/`) | n/a |
 | Analytics | None | n/a |
 | Payments | None | n/a |
 | Email provider | Supabase's built-in auth email sender (rate-limited; no custom SMTP configured) | n/a |
@@ -169,12 +174,13 @@ repo is cloned) — no monorepo path juggling.
 
 ```
 app/                      Next.js App Router pages + API routes
-  api/{tasks,ideas,categories,templates,chat}/route.ts   REST-ish JSON API, all except auth require login
+  api/{tasks,ideas,categories,templates,chat,notes,theme-image}/route.ts   JSON API, all except auth require login
   auth/callback/route.ts  Magic-link PKCE code exchange
   login/page.tsx          Public sign-in page (magic link only)
   page.tsx                Main board: Sidebar + TaskBoard + ChatPanel
   week/page.tsx            Calendar shell: Week/Month/Year tabs + group filter
   ideas/page.tsx           Idea box page
+  notes/page.tsx           Obsidian-style linked notes: editor + graph view
   templates/page.tsx       Starter-template picker page
   changelog/page.tsx       "What's new" page, reads lib/changelog.ts
   icon.tsx / apple-icon.tsx  Generated favicon (next/og ImageResponse)
@@ -183,13 +189,14 @@ app/                      Next.js App Router pages + API routes
 components/
   Sidebar.tsx, TaskBoard.tsx, ChatPanel.tsx   Main-board UI pieces
   calendar/{WeekView,MonthView,YearView}.tsx  Calendar view components
-  theme/{ThemeProvider,ThemeToggle}.tsx       Theme context + picker UI
+  notes/NoteGraph.tsx                          Force-directed note-graph SVG renderer
+  theme/{ThemeProvider,ThemeToggle}.tsx       Theme context + picker UI (incl. custom upload)
 lib/
   supabase.ts              Server-only service-role Supabase client (bypasses RLS)
   supabase/{server,browser}.ts   Session-aware Supabase clients (@supabase/ssr)
   auth.ts                  requireUserId() — the auth check every API route calls
   actions.ts               Server Action: signOutAction
-  tasks.ts, ideas.ts, messages.ts   All DB reads/writes, every function takes userId first
+  tasks.ts, ideas.ts, messages.ts, notes.ts   All DB reads/writes, every function takes userId first
   categorize.ts            Haiku tool-use call that extracts structured tasks from a message
   anthropic.ts             Anthropic client + model name constants
   prompts.ts               buildSystemPrompt(personality) + shared rules + extraction instructions
@@ -199,14 +206,18 @@ lib/
   groups.ts                 Academic/Personal/Work/Other colors, labels, cycle order
   templates.ts               Starter-template definitions (Student/Work/Home & Life)
   changelog.ts                Hand-maintained changelog entries
-  theme.ts                    Palette list + no-flash inline script string
+  theme.ts                    Palette list, no-flash inline script string, custom-bg-art builder
+  graph-layout.ts              Hand-rolled force-directed layout for the note graph
   format.ts                   Date/time display formatting helpers
 supabase/
   schema.sql                Original base schema (categories, tasks, messages)
-  migrations/002..005.sql   Forward-only migrations, run manually in order
+  migrations/002..007.sql   Forward-only migrations, run manually in order (007 creates the
+                             theme-uploads Storage bucket, not just a table change)
 scripts/
   create-users.mjs          One-off admin script to provision the 2 allowed accounts
-public/theme/                Self-hosted theme background photos (slate/ocean/sunset/forest.jpg) + SOURCES.md
+public/theme/                Self-hosted curated theme photos (10 of them) + SOURCES.md.
+                             User-uploaded custom backgrounds live in Supabase Storage
+                             (bucket theme-uploads), not here.
 proxy.ts                    Next.js 16 request gate (session refresh + auth redirect)
 ```
 
