@@ -4,16 +4,18 @@ Active execution queue. IDs are stable — reference them in commits/`SESSION_LO
 
 ## Current task
 
-**None.** The Obsidian-style notes system + custom theme image uploads request is complete
-as of commit `f8e46ef`, documented as of `620fa67`. Everything through `620fa67` is pushed to
-`origin/main`. See "Recently completed" below for what was done. The only open item in the
-whole repo is `ISSUE-006` (deliberately-deferred `npm audit` findings) under "Deferred" — not
-an active task.
+**None active, but uncommitted work exists.** An AI-provider swap (Anthropic Claude API →
+self-hosted OpenAI-compatible platform) was completed and verified this session but
+deliberately **not committed/pushed/deployed** per its task instructions — see
+`PROJECT_STATE.md` and `DECISIONS.md` → DEC-013 for full detail. `git status` will show
+uncommitted changes; commit only if explicitly asked. The only other open item in the repo is
+`ISSUE-006` (deliberately-deferred `npm audit` findings) under "Deferred" — not an active task.
 
 ## Next up
 
-None queued. If you're picking up fresh work, good candidates from "Technical debt"/"Testing
-needed" below, or a new feature request from the user.
+Commit and (if requested) deploy the AI-provider swap once reviewed — see `PROJECT_STATE.md`
+→ "Next recommended actions". Otherwise nothing queued; good candidates from "Technical
+debt"/"Testing needed" below, or a new feature request from the user.
 
 ## Blocked
 
@@ -79,7 +81,25 @@ section as new work happens.
 
 ## Recently completed
 
-1. **Cleanup for superseded custom theme-background uploads** (not yet committed — see
+1. **AI-provider swap: Anthropic Claude API → self-hosted OpenAI-compatible platform**
+   (this session, **uncommitted** — see `PROJECT_STATE.md`): `lib/anthropic.ts` deleted,
+   replaced by `lib/ai-client.ts` (an `openai`-package client pointed at
+   `https://api.gariyuuu.com/v1`, exposing `EXTRACTION_MODEL`/`CHAT_MODEL`, both currently
+   `"Yuu no Sekai"`). `lib/categorize.ts`'s forced tool-use extraction call and
+   `app/api/chat/route.ts`'s streaming chat reply were both translated from Anthropic's
+   Messages API request/response shapes to OpenAI's Chat Completions shapes.
+   `ANTHROPIC_API_KEY` renamed to `AI_PLATFORM_API_KEY`. Full reasoning and exact before/after
+   shapes: `DECISIONS.md` → DEC-013.
+   - Verified: `tsc`/`lint`/`build` all exit 0. The forced tool-use path — the highest-risk
+     part, core to the app's daily task-extraction function — was called directly (the real
+     `extractTasks` function, not a mock) with 5 varied real messages including "remind me to
+     buy milk tomorrow"; all 5 returned correctly-shaped, correctly-parsed structured output.
+     The streaming chat-reply path was verified with the same request shape used in
+     `app/api/chat/route.ts`, returning a real multi-chunk streamed, context-grounded reply.
+     Did **not** hit the live `/api/chat` HTTP endpoint with a real session, since this app has
+     no separate dev database and doing so would write to the 2 real users' production data.
+   - Not committed, not pushed, not deployed — per explicit task instructions.
+2. **Cleanup for superseded custom theme-background uploads** (not yet committed — see
    `app/api/theme-image/route.ts`): uploading a new custom background now lists the user's
    existing files in the `theme-uploads` bucket and deletes every one except the
    just-uploaded file, instead of leaving old uploads orphaned forever. Verified end-to-end

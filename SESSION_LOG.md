@@ -680,3 +680,115 @@ this file existed; dates are taken from `git log` where possible.
   password an agent could use to sign in independently).
 - **Recommended next action:** None required. The cleanup fix is uncommitted at the time of
   this log entry — commit it along with the doc updates in the same pass.
+
+---
+
+## Session: 2026-08-06 (later) — AI-provider swap: Anthropic → self-hosted OpenAI-compatible platform
+
+- **Account/agent:** New session, no memory of prior chat history — resumed entirely from
+  `CLAUDE.md`/`PROJECT_STATE.md`/`TASKS.md` per this repo's own working instructions.
+- **Goal:** Replace the app's two Anthropic API call sites with a self-hosted, OpenAI-compatible
+  platform the user built (`https://api.gariyuuu.com/v1`, one model, `"Yuu no Sekai"`, backed by
+  Qwen3-8B), so the user stops paying for direct Anthropic API access. Flagged as higher-risk
+  than a typical provider swap because one call site (`lib/categorize.ts`) uses forced tool-use
+  for structured task extraction, which is core to the app's actual daily function for its 2
+  real users.
+- **Files inspected before changing anything** (per this repo's "inspect the affected code
+  directly — don't trust a doc summary" rule): read `lib/anthropic.ts`, `lib/categorize.ts`,
+  `app/api/chat/route.ts`, `package.json`, `.env.local`, `.env.local.example` in full. Ran
+  `grep -rn` to confirm exactly two files imported from `lib/anthropic.ts` before renaming it.
+- **Files changed:**
+  - `package.json` / `package-lock.json` — removed `@anthropic-ai/sdk`, added `openai@^7.4.0`
+    (`npm install`).
+  - `lib/anthropic.ts` — **deleted**.
+  - `lib/ai-client.ts` (**new**) — `OpenAI` client constructed with
+    `baseURL: "https://api.gariyuuu.com/v1"` and `apiKey: process.env.AI_PLATFORM_API_KEY`;
+    exports `EXTRACTION_MODEL` and `CHAT_MODEL`, both currently `"Yuu no Sekai"` (kept as two
+    separate constants so the two call sites stay conceptually distinct, per the task's
+    instructions, in case a second model is added later).
+  - `lib/categorize.ts` — translated the Anthropic-style forced tool-use call
+    (`tools`/`input_schema`/`tool_choice: {type:"tool", name}`, reading
+    `content[].type === "tool_use"`) to OpenAI's shape (`tools: [{type:"function",
+    function:{name, description, parameters}}]`, `tool_choice: {type:"function",
+    function:{name}}`, reading `response.choices[0].message.tool_calls[0].function.arguments`
+    and `JSON.parse`-ing it). Added `reasoning: { enabled: false }` to keep Qwen3 out of its
+    default "thinking mode."
+  - `app/api/chat/route.ts` — translated `anthropic.messages.stream(...)` +
+    `.on("text", ...)` to `aiClient.chat.completions.create({stream: true, ...})` +
+    `for await (const chunk of stream)` reading `chunk.choices[0]?.delta?.content`. System
+    prompt moved from Anthropic's top-level `system` field to a `{role: "system", ...}` message
+    (OpenAI has no top-level `system` param). Added the same `reasoning: {enabled: false}`.
+  - `.env.local` / `.env.local.example` — `ANTHROPIC_API_KEY` renamed to `AI_PLATFORM_API_KEY`.
+    (Note: `.env.local.example` turned out to be unintentionally caught by the `.env*` pattern
+    in `.gitignore` and was never tracked in git in the first place — pre-existing, not caused
+    by this session, flagged for a future session's awareness, not fixed since it's outside
+    this task's scope.)
+  - `CLAUDE.md` — tech-stack line (AI provider + models used) and the env var table's
+    `ANTHROPIC_API_KEY` row.
+  - `PROJECT_STATE.md`, `TASKS.md`, `DECISIONS.md` (new DEC-013) — this entry's companions.
+  - **Deliberately not touched:** authentication, database schema/RLS, `proxy.ts`, production
+    data, `SESSION_LOG.md` history above this entry.
+- **Commands run:** `npm install`; `npx tsc --noEmit` (0 errors after 2 rounds of fixing a
+  TypeScript overload-resolution issue around the platform-specific `reasoning` field — see
+  "Problems found" below); `npm run lint` (0 errors/warnings after the same fix); `npm run
+  build` (exit 0, full route table printed clean); `npm run dev` (started clean on port 3000);
+  `curl` against the running dev server for route-gating checks; two standalone `tsx` scripts
+  (via `npx tsx`, not committed to the repo, run from the scratchpad) that imported the real
+  `lib/categorize.ts:extractTasks` and replicated `lib/ai-client.ts`'s streaming call shape
+  directly, to functionally test both AI call sites without going through a live authenticated
+  HTTP session.
+- **Tests run:** No automated test suite exists (unchanged). Manual verification:
+  1. `extractTasks("remind me to buy milk tomorrow", ["Personal", "Work"], [])` → returned
+     `{tasks: [{title: "buy milk", category: "Personal", start_date: "2026-08-08", end_date:
+     null, due_time: null}], delete_categories: [], delete_tasks: []}`. The date is correctly
+     "tomorrow" relative to the UTC date the code computes internally (confirmed local time
+     was already past midnight UTC at test time — pre-existing UTC-vs-local behavior, not
+     something this session changed).
+  2. 4 more varied `extractTasks` calls (a task with a specific time, an explicit deletion, two
+     tasks in one message, and a non-task chit-chat message) — all 5/5 returned correctly
+     shaped, correctly parsed `{tasks, delete_categories, delete_tasks}` output with sensible
+     field values (right title, right category match, right date/time parsing, empty arrays
+     for the non-task message).
+  3. A standalone streaming-chat-completion call using the exact same request shape as
+     `app/api/chat/route.ts` (same model, same `reasoning` field, grounded task context in the
+     user message) — received 11 separate content chunks and a correct, context-grounded reply
+     ("Your task \"buy milk\" is already set for tomorrow (2026-08-08)...").
+  4. `curl` against the running local dev server: `GET /login` → 200; unauthenticated
+     `POST /api/chat` → 401 (route-gating unaffected by the provider swap).
+  - **Deliberately not tested:** the literal authenticated `/api/chat` HTTP round-trip through
+    a real browser session. This app has no separate dev database — `npm run dev` talks to the
+    same live Supabase project as production — so exercising the real endpoint end-to-end would
+    have written real rows to one of the 2 real users' `tasks`/`messages` tables without
+    permission. Calling `extractTasks` directly and replicating the exact streaming-call shape
+    was the maximum safe verification available given that constraint.
+- **Results:** Both AI call sites work correctly through the new platform. `tsc`/`lint`/`build`
+  all exit 0. The forced tool-use extraction path — the highest-risk part per the task's own
+  framing — was reliable across 5/5 varied real messages with correctly parsed structured
+  output; **confidence is high for this specific path**, though the sample size (5 calls, one
+  session) is small relative to the platform's stated production traffic, and this was not a
+  load/stress test.
+- **Decisions made:** See `DECISIONS.md` → DEC-013 for the full reasoning, including why the
+  Anthropic SDK's `baseURL` override was not used instead (the new platform speaks the OpenAI
+  protocol, not Anthropic's).
+- **Problems found (discovered and fixed within this same session):**
+  1. `reasoning: { enabled: false }` is not in the `openai` npm package's TS types. Placing
+     `// @ts-expect-error` directly above the `reasoning:` line did not work — TypeScript
+     reports the "unknown property" error at the call-expression's overload-resolution site
+     (the closing `create({...})` line), not on the individual property line, so the
+     `@ts-expect-error` comment was "unused" (itself an error) and the real error was
+     unsuppressed. Fixed by casting the whole params object with `as any as
+     ChatCompletionCreateParams{Non,}Streaming` at the closing brace instead, with a matching
+     `eslint-disable-next-line @typescript-eslint/no-explicit-any` on the line directly above
+     the cast (an inline block comment spanning two lines had the same "wrong line" problem for
+     the ESLint disable — fixed by collapsing to a single-line comment directly above the cast).
+- **Work completed:** The AI-provider swap as scoped by the task, fully verified per the task's
+  own mandatory verification list.
+- **Work remaining:** Nothing code-level. This session's changes are **uncommitted, unpushed,
+  and undeployed** — per explicit task instructions, no `git commit`, `git push`, or
+  `vercel --prod --yes` was run. `AI_PLATFORM_API_KEY` is also not yet set in the Vercel
+  dashboard (only `ANTHROPIC_API_KEY` is, from before this session).
+- **Recommended next action:** If the user wants this live, it needs: (1) explicit go-ahead to
+  commit, (2) `AI_PLATFORM_API_KEY` added to the Vercel dashboard (Production + Preview scopes),
+  (3) `vercel --prod --yes`, and ideally (4) one real logged-in smoke test of `/api/chat`
+  against production once deployed, since this session could not safely do that against the
+  live database.

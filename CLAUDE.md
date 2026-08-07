@@ -129,8 +129,8 @@ All versions below are the **exact resolved versions** from `package-lock.json` 
 | DB client (server, service-role) | `@supabase/supabase-js` | 2.112.0 |
 | DB client (session-aware, SSR) | `@supabase/ssr` | 0.12.4 |
 | ORM | **None** — raw `supabase-js` query builder throughout |
-| AI provider | `@anthropic-ai/sdk` | 0.113.0 |
-| AI models used | `claude-haiku-4-5-20251001` (extraction), `claude-sonnet-5` (chat reply) | — |
+| AI provider | `openai` SDK, pointed at a self-hosted OpenAI-compatible platform (`https://api.gariyuuu.com/v1`) | ^7.4.0 |
+| AI models used | `"Yuu no Sekai"` (single model on the platform, used for both extraction and chat reply) | — |
 | Hosting | Vercel | — |
 | Auth provider | Supabase Auth (magic link / OTP, PKCE flow) | — |
 | Storage provider | Supabase Storage — one public bucket, `theme-uploads` (user-uploaded custom theme backgrounds only; curated theme photos and app assets still live in `public/`) | n/a |
@@ -342,7 +342,7 @@ its 4 variable names match `.env.local` exactly). This project uses Next.js's ow
 
 | Variable | Purpose | Required | Used in | Side | Format | Sensitive |
 |---|---|---|---|---|---|---|
-| `ANTHROPIC_API_KEY` | Auth for all Claude API calls (extraction + chat reply) | Yes | `lib/anthropic.ts` | Server only | Anthropic API key string | **Yes** |
+| `AI_PLATFORM_API_KEY` | Auth for all AI calls (extraction + chat reply) against the self-hosted OpenAI-compatible platform | Yes | `lib/ai-client.ts` | Server only | Platform API key string (`gai_live_...`) | **Yes** |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Yes | `lib/supabase.ts`, `lib/supabase/server.ts`, `lib/supabase/browser.ts`, `proxy.ts` | Both (name is `NEXT_PUBLIC_*`, exposed to the browser) | `https://<ref>.supabase.co` | No (project URL is not secret) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/public API key — used for the session-aware (RLS-respecting) client | Yes | `lib/supabase/server.ts`, `lib/supabase/browser.ts`, `proxy.ts` | Both | Supabase publishable key string | No (designed to be public, RLS is the real gate) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Full-privilege key that **bypasses RLS entirely** | Yes | `lib/supabase.ts`, `scripts/create-users.mjs` | **Server only — never import `lib/supabase.ts` from a `"use client"` file** | Supabase service-role JWT | **Yes, extremely** — full DB + Auth admin access |

@@ -3,147 +3,172 @@
 **This file describes the exact state of the repository at the moment of the last update. It
 is meant to let a new session resume from precisely this point.**
 
-- **Last updated:** 2026-08-06 — a feature session that added an Obsidian-style linked notes
-  system (`/notes`) and custom theme background image uploads, followed by documentation and
-  a push to `origin/main`.
+- **Last updated:** 2026-08-06 (later the same day) — an AI-provider swap session: replaced
+  the direct Anthropic API integration with a self-hosted, OpenAI-compatible platform. **Not
+  committed, not pushed, not deployed** — per explicit task instructions, this session did not
+  run `git commit`, `git push`, or `vercel --prod --yes`.
 - **Current branch:** `main`
-- **Latest commit:** `620fa67` — "Document the notes/custom-image feature and add v0.8
-  changelog entry". Previous commits: `f8e46ef` (the notes/custom-image feature itself),
-  `49cd6e4` (docs), `eb3c34a` (10 themes/personalities/liveliness), `720e9a2` (docs), `18200e7`
-  (bug/tech-debt fix pass), `d92a96b` (doc-sync), `071f6a3` (documentation/memory system),
-  `6b55515` (calendar views, real photo backgrounds, templates page, chat suggestions).
-- **Working tree: clean** (Verified via `git status` after the commit).
-- **Pushed:** Everything through `620fa67` (including `eb3c34a`, `49cd6e4`, `f8e46ef`, and the
-  doc-update commit `620fa67` itself) has been pushed to `origin/main` per explicit user
-  instruction. `git status` confirms `main` is up to date with `origin/main`. Verify current
-  push status with `git status`/`git log` rather than trusting this note.
-- **Deployed to production.** `vercel --prod --yes` was run after `f8e46ef`; live smoke tests
-  confirm the deployment matches the commit (see "What currently works" below).
-- **Uncommitted files:** None. **Untracked files:** None.
-- **Database/infra state:** Migrations `006_notes.sql` and `007_theme_uploads_bucket.sql`
-  have been run against production (Verified live: `notes` table queryable, `theme-uploads`
-  Storage bucket exists with `public: true`).
+- **Latest commit:** `e91699f` — "Clean up superseded custom theme-background uploads on
+  replace" (the last commit **before** this session's AI-provider-swap changes, which remain
+  uncommitted — see below). Prior commits unchanged from before: `620fa67`, `f8e46ef`,
+  `49cd6e4`, `eb3c34a`, `720e9a2`, `18200e7`, `d92a96b`, `071f6a3`, `6b55515`.
+- **Working tree: NOT clean.** This session modified `CLAUDE.md`, `DECISIONS.md`,
+  `app/api/chat/route.ts`, `lib/categorize.ts`, `package.json`, `package-lock.json`; deleted
+  `lib/anthropic.ts`; added `lib/ai-client.ts` (untracked); modified `.env.local` and
+  `.env.local.example` (both already gitignored by the `.env*` pattern in `.gitignore` — see
+  "Assumptions currently in use" below, this predates this session). Run `git status` before
+  continuing.
+- **Pushed:** Everything through `e91699f` was pushed in a prior session. This session's
+  changes are **not committed**, therefore not pushed.
+- **Not deployed.** The live production app at nodability.vercel.app is still running the code
+  as of `e91699f` — i.e. still calling the Anthropic API directly. This session's AI-provider
+  swap has **not** gone live. Do not assume production behavior matches this repo's working
+  tree until a deploy is explicitly requested and run.
+- **Uncommitted files:** `CLAUDE.md`, `DECISIONS.md`, `app/api/chat/route.ts`,
+  `lib/categorize.ts`, `package.json`, `package-lock.json` (modified); `lib/anthropic.ts`
+  (deleted). **Untracked files:** `lib/ai-client.ts`.
+- **Database/infra state:** Unchanged by this session — no schema/RLS/migration changes were
+  made (out of scope per the task instructions). Migrations `006_notes.sql` and
+  `007_theme_uploads_bucket.sql` remain the latest applied, as of the prior session's audit.
 
 ## Active development objective
 
-None. The feature request ("add ability to add custom images to the system and an obsidian
-system... connecting different notes to each other in a neural network for each class") is
-complete:
-- **Notes system:** `/notes` page — create/edit notes, optionally tag them to a category
-  ("class"), link between them with `[[Wikilink]]` syntax (Obsidian's own mechanic), and view
-  everything as a force-directed graph. New `notes` table (migration `006`); no stored edges
-  table — links are resolved dynamically by title match at read time
-  (`lib/notes.ts:buildNoteGraph`).
-- **Custom theme images:** An 11th "Custom" palette slot in the theme picker. Upload your own
-  photo via `POST /api/theme-image`, which stores it in a new public Supabase Storage bucket
-  (`theme-uploads`, migration `007`) and applies it at runtime via an inline CSS property
-  (since it's per-user data, unlike the 10 curated palettes' static `globals.css` rules).
+None right now. This session's objective — "replace the two Anthropic call sites with a
+self-hosted OpenAI-compatible platform so the user stops paying for direct Anthropic API
+access" — is **code-complete and verified, but deliberately left uncommitted/undeployed** per
+the task's explicit instructions (no commit, no push, no deploy unless separately asked).
 
 ## Last completed task
 
-The notes/custom-images feature request above, commit `f8e46ef`. Key implementation details
-for a future session:
-- **This is the app's first file-upload feature and first new data table since the original
-  schema** — both `app/api/theme-image/route.ts` (upload pattern) and
-  `supabase/migrations/007_theme_uploads_bucket.sql` (bucket-creation-via-SQL pattern) are
-  now the precedents to copy for any future upload feature or bucket.
-- Notes deliberately have **no stored links/edges table** — `[[Wikilink]]` resolution happens
-  live by case-insensitive title match among the same user's notes
-  (`lib/notes.ts:extractWikilinkTitles`, `buildNoteGraph`). This means renaming a note breaks
-  old links to its *previous* title (by design, not a bug — see `FEATURES.md` §11).
-- The graph view uses a hand-rolled force-directed layout (`lib/graph-layout.ts`) — no new
-  npm dependency was added for this, consistent with this app's general avoidance of heavy
-  dependencies for small, contained problems.
-- The 5 AI personalities and the notes system were both user-facing requests handled in
-  back-to-back sessions; the personalities' names/voices were a creative default (see below),
-  the notes/graph design followed 3 explicit scope-confirming answers from the user
-  (Obsidian-style `[[wikilinks]]`, optional category tagging, theme-backgrounds-only for the
-  image-upload scope).
+AI-provider swap: `lib/anthropic.ts` (Anthropic SDK client + `HAIKU_MODEL`/`SONNET_MODEL`
+constants) replaced by `lib/ai-client.ts` (`openai` npm package client pointed at
+`https://api.gariyuuu.com/v1`, `EXTRACTION_MODEL`/`CHAT_MODEL` constants both currently
+`"Yuu no Sekai"`, the platform's one exposed model). `lib/categorize.ts`'s forced tool-use
+extraction and `app/api/chat/route.ts`'s streaming chat reply were both translated from
+Anthropic's Messages API shape to OpenAI's Chat Completions shape. Full reasoning and the
+exact before/after shapes are in `DECISIONS.md` → DEC-013 — read that before touching
+`lib/ai-client.ts`, `lib/categorize.ts`, or the AI-call section of `app/api/chat/route.ts`
+again.
+- **Env var renamed:** `ANTHROPIC_API_KEY` → `AI_PLATFORM_API_KEY`, updated in `.env.local`,
+  `.env.local.example`, and `CLAUDE.md`'s env var table/tech-stack line. Note:
+  `.env.local.example` is (pre-existing, not caused by this session) unintentionally matched
+  by the `.env*` glob in `.gitignore` and was **never actually tracked in git** — `git ls-files
+  | grep env` returns nothing. This session's edit to it is real on disk but git-invisible;
+  flagging so a future session doesn't assume `git diff` will show it.
+- **Package swap:** `package.json`/`package-lock.json` — `@anthropic-ai/sdk` removed, `openai`
+  (`^7.4.0`) added. `npm install` was run; `node_modules` reflects the new dependency tree.
+- Untouched, on purpose: authentication, database schema/RLS, `proxy.ts`, and all production
+  data — none of these were part of the requested swap.
 
-All changes were verified: `npx tsc --noEmit`, `npm run lint`, `npm run build` all exit 0;
-the storage upload path was tested end-to-end (a real image uploaded directly to
-`theme-uploads`, confirmed publicly fetchable via its URL, then cleaned up); the notes table
-was tested end-to-end (two notes inserted with a wikilink between them, the case-insensitive
-unique-title constraint confirmed to correctly reject a duplicate with Postgres error
-`23505`, then cleaned up); deployed via `vercel --prod --yes`; live route-gating confirmed via
-curl (`/notes` → 307, `/api/notes` → 401, `/api/theme-image` POST → 401 when logged out).
+All changes were verified: `npx tsc --noEmit`, `npm run lint`, `npm run build` all exit 0 (see
+exact commands/output in `SESSION_LOG.md`). The forced tool-use extraction path was the
+highest-risk part (core to the app's daily function) and was tested directly — see "What
+currently works" below and `SESSION_LOG.md` for full detail, including why the test bypassed
+the live HTTP endpoint (this app has no separate dev database; hitting `/api/chat` for real
+would write to the 2 real users' production Supabase data).
 
 ## Current unfinished task
 
-**None.**
+**None**, but the change is **uncommitted**. If a future session (or this one, later) is asked
+to commit/push/deploy this work, do so deliberately — re-run the three verification commands
+first, since time may have passed and `node_modules`/lockfile drift is possible.
 
-## Files related to the unfinished task
+## Files related to the current state
 
-N/A — no task is unfinished.
+- `lib/ai-client.ts` (new) — the OpenAI client + model constants.
+- `lib/anthropic.ts` — **deleted**.
+- `lib/categorize.ts` — forced tool-use call, translated to OpenAI's tool-calling shape.
+- `app/api/chat/route.ts` — streaming chat reply, translated to OpenAI's streaming shape.
+- `package.json` / `package-lock.json` — dependency swap.
+- `.env.local` / `.env.local.example` — env var rename.
+- `CLAUDE.md`, `DECISIONS.md` — documentation of the swap (this file, `TASKS.md`, and
+  `SESSION_LOG.md` are the other three, per the repo's permanent-rules checklist).
 
 ## What has already been attempted (this session, informational)
 
-- Asked 3 clarifying questions before writing any code, since this request introduced real
-  new infrastructure (a Storage bucket, a new table, a graph UI) rather than extending an
-  established pattern: confirmed Obsidian-style `[[wikilinks]]` (not a manual link picker),
-  categories as optional tags (not a hard per-class boundary), and custom images scoped to
-  theme backgrounds only (not a general attachment system).
-- Verified the new Storage upload path and the new `notes` table directly against the live
-  database/bucket (not just via the HTTP API, which can't be exercised without a real
-  browser session) — see "Last completed task" above for exactly what was tested.
-- The graph's *visual* rendering (actual node/edge positions on screen) was **not**
-  screenshot-verified the way theme palettes were in a prior session — only the underlying
-  data logic (linking, layout algorithm producing coordinates) was confirmed. Worth a manual
-  look once there are real notes to render.
+- Read `CLAUDE.md` in full, `PROJECT_STATE.md`, and `TASKS.md` before touching any code, per
+  this repo's own working instructions.
+- Read the actual current contents of `lib/anthropic.ts`, `lib/categorize.ts`, and
+  `app/api/chat/route.ts` directly (not trusted from a doc summary) before changing them.
+- Confirmed via `grep -rn` that exactly two files imported from `lib/anthropic.ts`
+  (`lib/categorize.ts`, `app/api/chat/route.ts`) before renaming it, so the rename didn't
+  silently break an unnoticed third call site.
 
-## What currently works (Verified)
+## What currently works (Verified this session)
 
-- Production deployment is live and correctly gated: `/notes` → 307, `/api/notes` → 401,
-  `/api/theme-image` (POST) → 401, all when logged out.
-- `npm run build`, `npx tsc --noEmit`, and `npm run lint` all pass cleanly (exit 0).
-- The `notes` table and `theme-uploads` Storage bucket both exist in production and behave
-  as expected (unique-title constraint, public-read bucket) — verified via direct
-  service-role queries, not just "the migration ran without error."
-- Two real Supabase Auth accounts exist and have been used to sign in successfully. Real
-  email addresses are intentionally not recorded in this repo's docs (public GitHub remote).
-- Live production data: 19 tasks, 112 chat messages, 7 ideas, 3 categories, 0 notes (brand
-  new table, no real notes created yet) as of the original audit plus this session's checks.
+- `npx tsc --noEmit`, `npm run lint`, `npm run build` all exit 0 on the new code.
+- `npm run dev` starts cleanly on the new dependency tree; `/login` returns 200; unauthenticated
+  `POST /api/chat` still correctly returns 401 (route-gating unaffected by the provider swap).
+- **The forced tool-use extraction path** (`lib/categorize.ts:extractTasks`, the actual
+  production function, not a mock) was called directly with 5 varied real messages, including
+  the task's example "remind me to buy milk tomorrow": all 5 returned correctly-shaped,
+  correctly-parsed `{tasks, delete_categories, delete_tasks}` JSON with plausible field values
+  (right title, right category matched from known categories, correct relative-date math, and
+  a non-task chit-chat message correctly returning all-empty arrays). 5/5 — see
+  `SESSION_LOG.md` for the full transcript.
+- **The streaming chat-reply path** was verified using the exact same request shape as
+  `app/api/chat/route.ts` (same model, same `reasoning: {enabled: false}`, same message
+  structure): received an 11-chunk streamed reply, correctly grounded in the injected
+  "current open tasks" context block.
+- This was done **without** touching production Supabase data — `extractTasks` and the raw
+  streaming call don't write to the database; only `app/api/chat/route.ts`'s surrounding code
+  (unchanged by this session, still calls `requireUserId()`/`insertMessage()`/etc.) does that,
+  and that surrounding code was not exercised live in this session for exactly that reason.
 
 ## What currently fails / errors observed
 
-Nothing application-level. `npm audit` still reports 3 high-severity advisories (deliberately
-deferred, see `ISSUE-006` in `CLAUDE.md`) — unchanged by this session.
+Nothing from this session's changes. Pre-existing, unrelated: `npm audit` still reports
+findings tracked as `ISSUE-006` in `CLAUDE.md` (deliberately deferred, `next` version bump).
 
 ## Blockers
 
-None.
+None. This work is complete and verified; it is simply not yet committed/deployed, by design.
 
 ## Assumptions currently in use (Inferred, not stated anywhere explicitly)
 
-- Custom background image choice, like theme/palette/personality choice, is per-browser
-  (`localStorage` holds the URL), not per-account — consistent with the existing pattern.
-  The uploaded *file* itself lives server-side in Storage regardless, so it isn't lost if
-  localStorage is cleared, just no longer referenced by the UI.
-- The "for each class" framing in the user's request was interpreted as "notes can optionally
-  belong to a category" (matching an explicit answer to a clarifying question), not "notes
-  must belong to exactly one category" — cross-category linking is allowed.
+- The platform's `/v1/chat/completions` endpoint is assumed stable/available at
+  `https://api.gariyuuu.com/v1` for as long as this integration is in use — no fallback to the
+  Anthropic API was implemented if the self-hosted platform becomes unreachable.
+- `EXTRACTION_MODEL` and `CHAT_MODEL` are currently identical strings by design (see DEC-013)
+  — a future session adding a second model to the platform should NOT assume changing one
+  constant is a no-op elsewhere; check both call sites' token/latency budgets independently.
 
 ## Temporary decisions (things done for expedience, flagged as such at the time)
 
-- `app/api/theme-image/route.ts` trusts the client-reported file MIME type rather than
-  inspecting file bytes — acceptable given the 2-trusted-user threat model, flagged in
-  `SECURITY.md` as a real gap if this app's audience/exposure ever changes.
+- The `reasoning: { enabled: false }` field is added via an `as any as
+  ChatCompletionCreateParams{Non,}Streaming` double-cast in both `lib/categorize.ts` and
+  `app/api/chat/route.ts`, since it's a platform-specific extension the `openai` npm package's
+  TS types don't declare. If the `openai` package ever adds first-class support for this field
+  (or the platform's protocol changes), replace the cast with a proper typed field instead of
+  copy-pasting the workaround further.
 
 ## Next recommended actions
 
-1. Try the notes/graph feature with real notes and eyeball the graph rendering — it was
-   verified at the data-logic level but not visually.
-2. Longer-standing deferred items unchanged by this session: `ISSUE-006` (`npm audit
-   fix --force`), a minimal test suite, and confirming whether the life-area-grouping
-   discoverability fix changed real adoption.
+1. **If satisfied with this session's verification, ask explicitly for a commit** — this
+   session deliberately did not run `git commit`/`git push`/`vercel --prod --yes` per its
+   instructions. `git status` will show the changes listed above as uncommitted/untracked.
+2. Once committed and (if desired) deployed, do a **real** end-to-end smoke test through the
+   live app (logged in as one of the 2 real accounts) — this session's verification exercised
+   the exact underlying functions/request shapes but never the literal authenticated HTTP
+   round-trip, since that would have written to production data without permission.
+3. Consider whether `AI_PLATFORM_API_KEY` needs to be added to the Vercel dashboard
+   (Production **and** Preview scopes) before any deploy — it does not exist there yet;
+   `ANTHROPIC_API_KEY` is still the var currently set in Vercel.
+4. Older, unrelated deferred items unchanged by this session: `ISSUE-006` (`npm audit
+   fix --force`), a minimal test suite, notes/graph visual verification, and confirming
+   whether the life-area-grouping discoverability fix changed real adoption.
 
 ## Verification required before continuing
 
-- Run `git status` and `git log --oneline -3` at the start of any new session. Expect: clean
-  tree, `HEAD` at `620fa67`, `main` up to date with `origin/main` (pushed this session —
-  always verify directly).
+- Run `git status` and `git log --oneline -3` at the start of any new session. Expect: `HEAD`
+  at `e91699f`, but a **dirty working tree** (this session's uncommitted AI-provider-swap
+  changes) — do not assume a clean tree without checking.
 - Re-run `npm run build`, `npx tsc --noEmit`, and `npm run lint` to confirm the "all pass"
-  status in this file is still accurate.
-- If resuming much later, re-verify Supabase migration state (`007` should be the latest
-  applied) and re-check live row counts, since real usage continues independent of code
-  changes.
+  status in this file is still accurate — especially if `npm install` has been re-run or time
+  has passed, since the `openai` package is new to this repo and its own version may have
+  moved.
+- Before any deploy: confirm `AI_PLATFORM_API_KEY` (not `ANTHROPIC_API_KEY`) is set correctly
+  in the Vercel dashboard for both Production and Preview, or every AI call will fail in
+  production immediately after deploy.
+- If resuming much later, re-verify Supabase migration state and live row counts as before —
+  unaffected by this session, but drifts independently via real usage.

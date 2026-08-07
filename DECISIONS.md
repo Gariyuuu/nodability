@@ -269,3 +269,57 @@ reasoning directly). No developer was interviewed to produce this file — do no
   the custom-background logic ever changes.
 - **Affected files:** `lib/theme.ts`, `components/theme/ThemeProvider.tsx`, `app/globals.css`.
 - **Verification status:** Verified (explicit design goal during implementation).
+
+---
+
+### DEC-013 — Swapped the Anthropic Claude API for a self-hosted OpenAI-compatible platform
+- **Date:** 2026-08-06 (this session)
+- **Status:** Accepted, in effect
+- **Context:** The app previously called the Anthropic API directly (`@anthropic-ai/sdk`) for
+  both the Haiku extraction call and the Sonnet chat reply, incurring pay-per-token Anthropic
+  billing on every message. The user built a self-hosted, OpenAI-compatible model platform
+  (`https://api.gariyuuu.com/v1`, one exposed model, `"Yuu no Sekai"`, backed by Qwen3-8B) and
+  wanted both call sites pointed at it instead, to stop paying for direct Anthropic API access.
+- **Decision:** Replace `@anthropic-ai/sdk` with the `openai` npm package throughout. New file
+  `lib/ai-client.ts` (replaces `lib/anthropic.ts`) exports an `OpenAI` client constructed with
+  `baseURL: "https://api.gariyuuu.com/v1"` and two model-name constants, `EXTRACTION_MODEL` and
+  `CHAT_MODEL`, both currently the string `"Yuu no Sekai"` — kept as two separate constants
+  (not collapsed to one) so the two call sites stay conceptually distinct in code in case a
+  second model is added to the platform later. `lib/categorize.ts`'s forced tool-use call was
+  translated from Anthropic's `tools`/`input_schema`/`tool_choice: {type:"tool", name}` shape to
+  OpenAI's `tools: [{type:"function", function:{name, description, parameters}}]` /
+  `tool_choice: {type:"function", function:{name}}` shape; the extracted result now comes from
+  `response.choices[0].message.tool_calls[0].function.arguments` (a JSON string, parsed with
+  `JSON.parse`) instead of Anthropic's `content` array `tool_use` block. `app/api/chat/route.ts`
+  was translated from `anthropic.messages.stream(...)` + `.on("text", ...)` to
+  `aiClient.chat.completions.create({stream: true, ...})` + `for await (const chunk of stream)`
+  reading `chunk.choices[0]?.delta?.content`. Every request also sends
+  `reasoning: { enabled: false }` (a platform-specific extension not in the `openai` npm
+  package's TS types — the whole params object is cast via `as any as
+  ChatCompletionCreateParams{Non,}Streaming` to allow it) to keep Qwen3 out of its default
+  "thinking mode," which the user reported burns ~10x more output tokens otherwise.
+- **Reasoning:** Directly requested — the user built and wanted to switch to their own
+  platform to stop paying Anthropic. Kept the same two-call-site shape (cheap
+  extraction/categorization call + capable streaming chat-reply call) since the platform
+  currently exposes only one model; the constant split exists purely for future-proofing.
+- **Alternatives considered:** Pointing `@anthropic-ai/sdk`'s client at the new `baseURL`
+  directly (Anthropic SDK supports a `baseURL` override). Rejected — the new platform speaks
+  the OpenAI-compatible protocol (`/v1/chat/completions`, OpenAI tool-calling schema), not
+  Anthropic's `/v1/messages` wire format; the Anthropic SDK would send the wrong request shape.
+- **Consequences:** The two tool-use response shapes differ meaningfully (Anthropic:
+  `content[].type === "tool_use"` blocks with a pre-parsed `.input` object; OpenAI:
+  `message.tool_calls[].function.arguments` as a raw JSON string requiring `JSON.parse`) — any
+  future edit to the tool schema or response handling in `lib/categorize.ts` must use the
+  OpenAI shape, not the old Anthropic one. Model selection is currently a no-op (both constants
+  point at the same string) until the platform exposes a second model.
+- **Affected files:** `package.json` (removed `@anthropic-ai/sdk`, added `openai`),
+  `lib/ai-client.ts` (new, replaces deleted `lib/anthropic.ts`), `lib/categorize.ts`,
+  `app/api/chat/route.ts`, `.env.local.example`/`.env.local` (`ANTHROPIC_API_KEY` renamed to
+  `AI_PLATFORM_API_KEY`), `CLAUDE.md` (tech-stack line, env var table).
+- **Verification status:** Verified — `npx tsc --noEmit`, `npm run lint`, `npm run build` all
+  exit 0; the forced tool-use extraction path (`extractTasks`) was called directly (not through
+  a live HTTP session, to avoid touching production Supabase data — see `SESSION_LOG.md`) with
+  5 varied real messages including "remind me to buy milk tomorrow" and returned correctly
+  shaped, correctly parsed structured output on every call; the streaming chat-reply path was
+  verified with the same request shape used in `app/api/chat/route.ts`, returning an 11-chunk
+  streamed reply grounded in injected task context.

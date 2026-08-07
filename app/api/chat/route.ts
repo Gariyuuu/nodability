@@ -1,4 +1,5 @@
-import { anthropic, SONNET_MODEL } from "@/lib/anthropic";
+import type OpenAI from "openai";
+import { aiClient, CHAT_MODEL } from "@/lib/ai-client";
 import { requireUserId, UnauthorizedError } from "@/lib/auth";
 import { extractTasks } from "@/lib/categorize";
 import { buildSystemPrompt } from "@/lib/prompts";
@@ -116,30 +117,43 @@ export async function POST(req: Request) {
     const actionsBlock =
       actionLines.length > 0 ? `\n\nActions just taken:\n${actionLines.map((l) => `- ${l}`).join("\n")}` : "";
 
-    const stream = anthropic.messages.stream({
-      model: SONNET_MODEL,
+    const stream = await aiClient.chat.completions.create({
+      model: CHAT_MODEL,
       max_tokens: 1024,
-      system: buildSystemPrompt(personality),
+      // Qwen3's default "thinking mode" burns ~10x more output tokens if left enabled —
+      // `reasoning` is a platform-specific extension not in the openai npm package's TS
+      // types, so the whole params object is cast below.
+      reasoning: { enabled: false },
+      stream: true,
       messages: [
+        { role: "system", content: buildSystemPrompt(personality) },
         ...conversationHistory,
         {
           role: "user",
           content: `Today's date: ${today}\n\nCurrent open tasks (for grounding your answer — do not invent anything not listed here):\n${contextBlock}${actionsBlock}\n\nUser message: ${message}`,
         },
       ],
-    });
+      // `reasoning` above is a platform-specific extension the openai npm package's types don't declare
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any as OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming);
 
     const encoder = new TextEncoder();
     let fullReply = "";
 
     const readable = new ReadableStream({
       async start(controller) {
-        stream.on("text", (delta) => {
-          fullReply += delta;
-          controller.enqueue(encoder.encode(delta));
-        });
-        stream.on("error", (err) => controller.error(err));
-        await stream.finalMessage();
+        try {
+          for await (const chunk of stream) {
+            const delta = chunk.choices[0]?.delta?.content;
+            if (delta) {
+              fullReply += delta;
+              controller.enqueue(encoder.encode(delta));
+            }
+          }
+        } catch (err) {
+          controller.error(err);
+          return;
+        }
         controller.close();
 
         await insertMessage(userId, "user", message);
