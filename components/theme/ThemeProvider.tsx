@@ -2,8 +2,10 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import {
+  CUSTOM_BG_STORAGE_KEY,
   PALETTE_STORAGE_KEY,
   THEME_STORAGE_KEY,
+  customBgArt,
   type Palette,
   type ThemeMode,
 } from "@/lib/theme";
@@ -11,13 +13,15 @@ import {
 interface ThemeContextValue {
   mode: ThemeMode;
   palette: Palette;
+  customBgUrl: string | null;
   setMode: (mode: ThemeMode) => void;
   setPalette: (palette: Palette) => void;
+  setCustomBgUrl: (url: string) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-function applyTheme(mode: ThemeMode, palette: Palette) {
+function applyTheme(mode: ThemeMode, palette: Palette, customBgUrl: string | null) {
   const resolved =
     mode === "system"
       ? window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -26,6 +30,11 @@ function applyTheme(mode: ThemeMode, palette: Palette) {
       : mode;
   document.documentElement.setAttribute("data-theme", resolved);
   document.documentElement.setAttribute("data-palette", palette);
+  if (palette === "custom" && customBgUrl) {
+    document.documentElement.style.setProperty("--bg-art", customBgArt(customBgUrl, resolved));
+  } else {
+    document.documentElement.style.removeProperty("--bg-art");
+  }
 }
 
 // `typeof window === "undefined"` during SSR (localStorage doesn't exist in Node) — falls
@@ -41,19 +50,24 @@ function readStoredPalette(): Palette {
   if (typeof window === "undefined") return "slate";
   return (localStorage.getItem(PALETTE_STORAGE_KEY) as Palette | null) ?? "slate";
 }
+function readStoredCustomBgUrl(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(CUSTOM_BG_STORAGE_KEY);
+}
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<ThemeMode>(readStoredMode);
   const [palette, setPaletteState] = useState<Palette>(readStoredPalette);
+  const [customBgUrl, setCustomBgUrlState] = useState<string | null>(readStoredCustomBgUrl);
 
   useEffect(() => {
-    applyTheme(mode, palette);
+    applyTheme(mode, palette, customBgUrl);
     if (mode !== "system") return;
     const mql = window.matchMedia("(prefers-color-scheme: dark)");
-    const listener = () => applyTheme(mode, palette);
+    const listener = () => applyTheme(mode, palette, customBgUrl);
     mql.addEventListener("change", listener);
     return () => mql.removeEventListener("change", listener);
-  }, [mode, palette]);
+  }, [mode, palette, customBgUrl]);
 
   const setMode = (next: ThemeMode) => {
     setModeState(next);
@@ -63,9 +77,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setPaletteState(next);
     localStorage.setItem(PALETTE_STORAGE_KEY, next);
   };
+  const setCustomBgUrl = (url: string) => {
+    setCustomBgUrlState(url);
+    localStorage.setItem(CUSTOM_BG_STORAGE_KEY, url);
+    setPalette("custom");
+  };
 
   return (
-    <ThemeContext.Provider value={{ mode, palette, setMode, setPalette }}>
+    <ThemeContext.Provider
+      value={{ mode, palette, customBgUrl, setMode, setPalette, setCustomBgUrl }}
+    >
       {children}
     </ThemeContext.Provider>
   );

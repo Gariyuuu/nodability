@@ -9,10 +9,24 @@ export type Palette =
   | "lavender"
   | "amber"
   | "midnight"
-  | "coral";
+  | "coral"
+  | "custom";
 
 export const THEME_STORAGE_KEY = "nodability-theme";
 export const PALETTE_STORAGE_KEY = "nodability-palette";
+// Stores the uploaded image URL itself (not just a flag) — the "custom"
+// palette in globals.css has no --bg-art of its own; it's applied inline via
+// ThemeProvider/the no-flash script using this value.
+export const CUSTOM_BG_STORAGE_KEY = "nodability-custom-bg";
+
+// Builds the --bg-art value for an uploaded custom photo, matching the same
+// light/dark scrim approach as the 10 curated palettes (a flat semi-opaque
+// wash so the photo reads as a subtle background rather than full-bleed).
+export function customBgArt(url: string, resolvedMode: "light" | "dark"): string {
+  const scrim =
+    resolvedMode === "dark" ? "rgba(10, 10, 10, 0.82)" : "rgba(255, 255, 255, 0.78)";
+  return `linear-gradient(${scrim}, ${scrim}), url("${url}")`;
+}
 
 export const PALETTES: { id: Palette; label: string; preview: string }[] = [
   {
@@ -79,6 +93,16 @@ export const NO_FLASH_SCRIPT = `
       : mode;
     document.documentElement.setAttribute("data-theme", resolved);
     document.documentElement.setAttribute("data-palette", palette);
+    if (palette === "custom") {
+      var customUrl = localStorage.getItem(${JSON.stringify(CUSTOM_BG_STORAGE_KEY)});
+      if (customUrl) {
+        var scrim = resolved === "dark" ? "rgba(10, 10, 10, 0.82)" : "rgba(255, 255, 255, 0.78)";
+        document.documentElement.style.setProperty(
+          "--bg-art",
+          "linear-gradient(" + scrim + ", " + scrim + "), url(\\"" + customUrl + "\\")"
+        );
+      }
+    }
   } catch (e) {}
 })();
 `;

@@ -260,6 +260,31 @@
     url("/theme/coral.jpg");
 }
 
+/* "Custom" palette: neutral Slate-like tokens. Deliberately has no --bg-art
+   here — an uploaded photo is per-user, so it's applied at runtime via an
+   inline style on <html> (see lib/theme.ts's NO_FLASH_SCRIPT and
+   ThemeProvider), which overrides this rule thanks to inline-style
+   specificity. If no custom image has been uploaded yet, this palette
+   simply has no background art (falls back to the flat --bg color). */
+:root[data-palette="custom"] {
+  --bg: #ffffff;
+  --fg: #171717;
+  --surface: #f3f4f6;
+  --border: #e5e7eb;
+  --muted: #6b7280;
+  --accent: #111827;
+  --accent-fg: #ffffff;
+}
+:root[data-palette="custom"][data-theme="dark"] {
+  --bg: #0a0a0a;
+  --fg: #ededed;
+  --surface: #1a1a1a;
+  --border: #2e2e2e;
+  --muted: #9ca3af;
+  --accent: #e5e7eb;
+  --accent-fg: #111827;
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-fg: var(--fg);

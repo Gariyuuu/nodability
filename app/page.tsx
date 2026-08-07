@@ -22,6 +22,9 @@ export default function Home() {
           <Link href="/ideas" className="text-sm text-muted hover:text-fg">
             💡 Ideas
           </Link>
+          <Link href="/notes" className="text-sm text-muted hover:text-fg">
+            🧠 Notes
+          </Link>
           <Link href="/week" className="text-sm text-muted hover:text-fg">
             📅 Calendar →
           </Link>
