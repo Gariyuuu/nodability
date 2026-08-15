@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ThinkingOrb } from "thinking-orbs";
 import { PERSONALITIES, findPersonality } from "@/lib/personalities";
 
 interface ChatMessage {
@@ -163,7 +164,15 @@ export default function ChatPanel({ onTasksChanged }: { onTasksChanged: () => vo
                 : "bg-surface text-fg"
             }`}
           >
-            {m.content || (m.role === "assistant" && sending ? `${personality.emoji} …` : "")}
+            {m.content ||
+              (m.role === "assistant" && sending ? (
+                <span className="inline-flex items-center gap-2">
+                  <ThinkingOrb state="composing" size={20} aria-label={`${personality.name} is composing a reply`} />
+                  <span>{personality.emoji} Thinking…</span>
+                </span>
+              ) : (
+                ""
+              ))}
           </div>
         ))}
       </div>
