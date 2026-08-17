@@ -38,8 +38,8 @@ Practical map of files a future coding agent is likely to touch. Trivial generat
 ## `lib/supabase/server.ts` and `lib/supabase/browser.ts`
 - **Purpose:** Session-aware (anon-key) Supabase clients using `@supabase/ssr` — one for
   server contexts (cookies via `next/headers`), one for client components (browser storage).
-- **Called by:** `server.ts` → `lib/auth.ts`, `lib/actions.ts`, `app/auth/callback/route.ts`.
-  `browser.ts` → `app/login/page.tsx` only.
+- **Called by:** `lib/supabase/server.ts` → `lib/auth.ts`, `lib/actions.ts`, `app/auth/callback/route.ts`.
+  `lib/supabase/browser.ts` → `app/login/page.tsx` only.
 - **Edit when:** changing how sessions are read/written, or Supabase client config
   (e.g. adding OAuth providers).
 - **Risk:** Medium. Getting the cookie `getAll`/`setAll` wiring wrong breaks session
@@ -60,7 +60,7 @@ Practical map of files a future coding agent is likely to touch. Trivial generat
 
 ## `lib/ideas.ts`, `lib/messages.ts`
 - **Purpose:** Same pattern as `lib/tasks.ts`, scoped to the `ideas` and `messages` tables
-  respectively. `messages.ts` is only used by the chat flow (persisting/retrieving
+  respectively. `lib/messages.ts` is only used by the chat flow (persisting/retrieving
   conversation history).
 - **Called by:** `app/api/ideas/route.ts` (ideas.ts); `app/api/chat/route.ts` (messages.ts).
 - **Risk:** Medium-high, same reasoning as `lib/tasks.ts`.
@@ -171,7 +171,7 @@ Practical map of files a future coding agent is likely to touch. Trivial generat
 ## `app/notes/page.tsx`, `lib/notes.ts`, `app/api/notes/route.ts`, `components/notes/NoteGraph.tsx`
 - **Purpose:** The Obsidian-style linked-notes feature. `lib/notes.ts` has all DB CRUD plus
   the pure functions `extractWikilinkTitles` (regex-parses `[[Title]]` syntax) and
-  `buildNoteGraph` (resolves titles to note IDs, dedupes edges). `NoteGraph.tsx` renders the
+  `buildNoteGraph` (resolves titles to note IDs, dedupes edges). `components/notes/NoteGraph.tsx` renders the
   result as SVG.
 - **Called by:** `app/notes/page.tsx` orchestrates all of the above; nothing else in the app
   touches notes.
@@ -185,7 +185,7 @@ Practical map of files a future coding agent is likely to touch. Trivial generat
 
 ## `lib/graph-layout.ts`
 - **Purpose:** Hand-rolled force-directed graph layout (repulsion + spring + centering,
-  fixed iteration count) — positions note nodes for `NoteGraph.tsx`. No graph/viz library
+  fixed iteration count) — positions note nodes for `components/notes/NoteGraph.tsx`. No graph/viz library
   dependency.
 - **Called by:** `components/notes/NoteGraph.tsx` only.
 - **Edit when:** tuning the graph's visual spacing/settle behavior (see the constants at the
@@ -273,11 +273,11 @@ Practical map of files a future coding agent is likely to touch. Trivial generat
 
 ## `public/theme/` (slate.jpg, ocean.jpg, sunset.jpg, forest.jpg, SOURCES.md)
 - **Purpose:** Self-hosted theme background photos, one per palette, referenced from
-  `app/globals.css`'s `--bg-art` values. `SOURCES.md` records the original Unsplash photo IDs
+  `app/globals.css`'s `--bg-art` values. `public/theme/SOURCES.md` records the original Unsplash photo IDs
   and license for provenance.
-- **Called by:** `app/globals.css` via `url("/theme/<name>.jpg")`.
+- **Called by:** `app/globals.css`, via a `url(...)` reference to the chosen theme's `.jpg` filename under `/theme/`.
 - **Edit when:** changing a palette's background photo — replace the file (keep the same
-  name) or add a new palette's image and update `globals.css` accordingly.
+  name) or add a new palette's image and update `app/globals.css` accordingly.
 - **Risk:** Medium. Must stay excluded from `proxy.ts`'s auth gate (it is, via the
   extension-based matcher) or the images 307-redirect for logged-out visitors — this exact
   bug happened once already when these files were added.
@@ -297,12 +297,13 @@ Practical map of files a future coding agent is likely to touch. Trivial generat
 
 ## Where to make common changes
 
-- **Add a page:** create `app/<name>/page.tsx` with `"use client"` at the top; add a nav
-  `<Link>` in `app/page.tsx`'s header (and `app/week/page.tsx`'s if it should be reachable
-  from the calendar too). Remember `proxy.ts` gates it by default unless added to
-  `PUBLIC_PATHS`.
-- **Add an API route:** create `app/api/<name>/route.ts`; copy the `requireUserId()` +
-  try/catch pattern from `app/api/tasks/route.ts`, not `app/api/chat/route.ts`.
+- **Add a page:** create a new route folder under `app/` with a `page.tsx` inside it,
+  `"use client"` at the top; add a nav `<Link>` in `app/page.tsx`'s header (and
+  `app/week/page.tsx`'s if it should be reachable from the calendar too). Remember `proxy.ts`
+  gates it by default unless added to `PUBLIC_PATHS`.
+- **Add an API route:** create a new route folder under `app/api/` with a `route.ts` inside
+  it; copy the `requireUserId()` + try/catch pattern from `app/api/tasks/route.ts`, not
+  `app/api/chat/route.ts`.
 - **Modify authentication:** `app/login/page.tsx` (UI), `app/auth/callback/route.ts`
   (callback), `lib/supabase/{server,browser}.ts` (clients), `proxy.ts` (gate),
   `scripts/create-users.mjs` (provisioning).

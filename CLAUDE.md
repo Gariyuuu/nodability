@@ -74,6 +74,20 @@ run**. Verified via `node_modules/next/dist/docs/01-app/03-api-reference/03-file
 
 ## Current status
 
+**2026-08-16 update [Verified], documentation sweep (no feature work):** Two more feature
+commits landed since the 2026-08-07 audit below, both merged to `main` (HEAD `28f4fbb`, tree
+clean, no other branches outstanding): (1) `fff3db2`/`b9ca352` — `app/opengraph-image.tsx`
+(next/og-generated OG card), `app/robots.ts`, and a `proxy.ts` matcher update to allowlist
+`opengraph-image` (same "no file extension, so the extension-based static exclusion misses
+it" bug class as `/icon`/`/theme/*.jpg` below) — **live-verified** against production this
+sweep (`curl https://nodability.vercel.app/robots.txt` → 200; `/opengraph-image` → 200
+`image/png`). (2) `217373b`/`28f4fbb` — `components/ChatPanel.tsx` now renders an animated
+`ThinkingOrb` (new dependency: `thinking-orbs`) next to "Thinking…" text while the assistant
+composes a reply, replacing a plain-text placeholder — **not** live-verified (needs an
+authenticated session); this is current task `T-001` in `TASKS.md`. Details in
+`PROJECT_STATE.md`'s 2026-08-16 block. Everything below in this section is the original
+2026-08-07 audit account, still otherwise accurate.
+
 - **Current stable state:** Deployed and working. Build succeeds (`npm run build`, exit 0).
   TypeScript type-checks clean (`npx tsc --noEmit`, exit 0). **ESLint now passes cleanly too**
   (`npm run lint`, exit 0) — all 9 original errors were fixed, see [Known issues](#known-issues).
@@ -166,7 +180,7 @@ repo is cloned) — no monorepo path juggling.
 | Lint | `npm run lint` | Yes — **currently fails, exit 1, 9 errors** (see Known issues) |
 | Type-check only | `npx tsc --noEmit` | Yes — currently passes, exit 0 |
 | Unit / integration / E2E tests | **No test command exists.** No test framework is installed and no test files exist anywhere in the repo. | N/A |
-| DB migration | No CLI migration tool. Migrations are hand-written `.sql` files under `supabase/migrations/`, applied **manually** by pasting into the Supabase SQL Editor at `https://supabase.com/dashboard/project/hwvqnenmnrzdncwznorv/sql/new`. There is no `supabase/config.toml` and the Supabase CLI is not used. | Yes |
+| DB migration | No CLI migration tool. Migrations are hand-written `.sql` files under `supabase/migrations/`, applied **manually** by pasting into the Supabase SQL Editor at `https://supabase.com/dashboard/project/hwvqnenmnrzdncwznorv/sql/new`. `supabase/config.toml` does not exist and the Supabase CLI is not used. | Yes |
 | DB seed | No seed script exists. | N/A |
 | Generate types | No generated-types workflow exists (no `supabase gen types`). Table shapes are hand-written TypeScript interfaces in `lib/tasks.ts`, `lib/ideas.ts`, `lib/messages.ts`. | N/A |
 | Reset local dev data | N/A — there is no local database; `npm run dev` talks to the same live Supabase project as production (see [Known issues](#known-issues) / [SECURITY.md](SECURITY.md) for the implications). | Yes |
@@ -242,7 +256,7 @@ version:
   fetch involved. There is **no database-backed Server Component data fetching** anywhere and
   no `getServerSideProps`/RSC-database-fetch patterns in use — this is a classic
   SPA-over-API-routes shape, not an RSC-idiomatic Next.js app. (Verified via `head -1` on
-  every `page.tsx`.)
+  every page.tsx file in the repo.)
 - **Server/client boundary:** API routes (`app/api/*/route.ts`) and one Server Action
   (`lib/actions.ts:signOutAction`) are the only server-side code paths that touch the database.
 - **Database access pattern:** All server-side DB access goes through a single **service-role**
@@ -309,10 +323,10 @@ Full detail in [UI_SYSTEM.md](UI_SYSTEM.md). Key facts every session should know
   `text-fg`, ...). There is **no `tailwind.config.js`** — Tailwind v4's CSS-first config is
   used exclusively.
 - **10 palettes:** Slate, Ocean, Sunset, Forest, Rose, Mint, Lavender, Amber, Midnight, Coral
-  — each with a light and dark variant (20 total variable blocks in `globals.css`). Palette +
+  — each with a light and dark variant (20 total variable blocks in `app/globals.css`). Palette +
   mode are chosen via `components/theme/ThemeToggle.tsx` and persisted to `localStorage`
   (`lib/theme.ts` constants `THEME_STORAGE_KEY` / `PALETTE_STORAGE_KEY`).
-- **Backgrounds are real photos, self-hosted** at `public/theme/<name>.jpg` (one per palette,
+- **Backgrounds are real photos, self-hosted** at a chosen `public/theme/*.jpg` filename (one per palette,
   same photo for light/dark, darkened/lightened via a CSS scrim gradient layered on top).
   Originally sourced from Unsplash and hotlinked directly from `images.unsplash.com` for the
   first 4 — downloaded and self-hosted for durability starting at commit `18200e7`; the 6
@@ -487,7 +501,7 @@ is often still useful context for related future work.
 ### ISSUE-001 — ESLint failed with 9 errors — **Resolved**
 - **Affected files:** `app/ideas/page.tsx`, `app/week/page.tsx`, `components/TaskBoard.tsx`,
   `components/theme/ThemeProvider.tsx`, `components/ChatPanel.tsx`, `lib/tasks.ts`.
-- **Fix applied:** `ThemeProvider.tsx` got a genuine structural fix — the localStorage-read
+- **Fix applied:** `components/theme/ThemeProvider.tsx` got a genuine structural fix — the localStorage-read
   effect was replaced with guarded lazy `useState` initializers (`readStoredMode`/
   `readStoredPalette`, falling back to defaults when `typeof window === "undefined"`), which
   eliminates the extra post-mount render entirely rather than just satisfying the linter. The
@@ -496,7 +510,7 @@ is often still useful context for related future work.
   `// eslint-disable-next-line react-hooks/set-state-in-effect` with an inline comment — this
   is a standard, functionally-correct pattern the rule is simply stricter about than
   warranted here; a full data-fetching-library migration (SWR/React Query/Suspense) was
-  judged disproportionate for this app's scale. The unescaped apostrophe in `ChatPanel.tsx`
+  judged disproportionate for this app's scale. The unescaped apostrophe in `components/ChatPanel.tsx`
   was fixed directly (`&apos;`). The 4 `: any` casts in `lib/tasks.ts` were replaced with two
   real local interfaces (`TaskWithCategoryRow`, `TaskDeletionMatchRow`) matching each query's
   actual `select()` shape.
@@ -507,7 +521,7 @@ is often still useful context for related future work.
 - **Fix applied:** The route body (from message validation through building the Sonnet
   stream) is now wrapped in try/catch; any failure (Haiku extraction, Supabase writes,
   malformed JSON body) returns a clean `500` plain-text response instead of an unhandled
-  framework error. `ChatPanel.tsx`'s `send()` now checks `res.ok` before treating the
+  framework error. `components/ChatPanel.tsx`'s `send()` now checks `res.ok` before treating the
   response as a stream to read, so a failed request shows the intended friendly error message
   instead of rendering raw error text into the chat bubble.
 - **Verified:** `npx tsc --noEmit`, `npm run build`, `npm run lint` all pass; not
@@ -572,7 +586,7 @@ is often still useful context for related future work.
 ## DO NOT CHANGE WITHOUT REVIEW
 
 - **`supabase/migrations/*.sql` — never edit a migration that has already been run in
-  production.** Add a new numbered migration instead. `004_user_scoping.sql` in particular
+  production.** Add a new numbered migration instead. `supabase/migrations/004_user_scoping.sql` in particular
   must run in its documented two-pass order (see the comment at the top of that file) —
   running it as one paste will fail because Pass 2's `NOT NULL` constraint requires the
   manual backfill step in between.

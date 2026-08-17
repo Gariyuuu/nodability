@@ -253,8 +253,8 @@ reasoning directly). No developer was interviewed to produce this file — do no
   `app/globals.css`, known at build time. A user-uploaded custom background is per-user data
   (a Storage URL) that doesn't exist at build time and can't be baked into a stylesheet rule.
 - **Decision:** Treat `"custom"` as an 11th palette value. Its light/dark token blocks in
-  `globals.css` define every variable except `--bg-art`; that one property is set directly on
-  `document.documentElement.style` at runtime by `ThemeProvider.tsx` (and replicated in
+  `app/globals.css` define every variable except `--bg-art`; that one property is set directly on
+  `document.documentElement.style` at runtime by `components/theme/ThemeProvider.tsx` (and replicated in
   `NO_FLASH_SCRIPT` so there's no flash-of-missing-background before React hydrates).
 - **Reasoning:** Reuses 100% of the existing `data-palette`/`data-theme` mechanism and every
   component's existing `bg-bg`/`text-fg`/etc. Tailwind classes — no parallel styling system
@@ -262,7 +262,7 @@ reasoning directly). No developer was interviewed to produce this file — do no
 - **Alternatives considered:** A separate React-rendered `<div>` with an inline
   `backgroundImage` style, bypassing the CSS-variable system entirely. Rejected — would
   duplicate the scrim-gradient-over-photo logic already expressed once in
-  `lib/theme.ts:customBgArt` and once per palette in `globals.css`, and would need its own
+  `lib/theme.ts:customBgArt` and once per palette in `app/globals.css`, and would need its own
   z-index/positioning instead of reusing the existing `body::before` rule.
 - **Consequences:** The no-flash script (`NO_FLASH_SCRIPT`) now has to duplicate this
   runtime-style-setting logic, not just attribute-setting — a second place to keep in sync if
@@ -281,7 +281,7 @@ reasoning directly). No developer was interviewed to produce this file — do no
   (`https://api.gariyuuu.com/v1`, one exposed model, `"Yuu no Sekai"`, backed by Qwen3-8B) and
   wanted both call sites pointed at it instead, to stop paying for direct Anthropic API access.
 - **Decision:** Replace `@anthropic-ai/sdk` with the `openai` npm package throughout. New file
-  `lib/ai-client.ts` (replaces `lib/anthropic.ts`) exports an `OpenAI` client constructed with
+  `lib/ai-client.ts` (replaces lib/anthropic.ts) exports an `OpenAI` client constructed with
   `baseURL: "https://api.gariyuuu.com/v1"` and two model-name constants, `EXTRACTION_MODEL` and
   `CHAT_MODEL`, both currently the string `"Yuu no Sekai"` — kept as two separate constants
   (not collapsed to one) so the two call sites stay conceptually distinct in code in case a
@@ -313,7 +313,7 @@ reasoning directly). No developer was interviewed to produce this file — do no
   OpenAI shape, not the old Anthropic one. Model selection is currently a no-op (both constants
   point at the same string) until the platform exposes a second model.
 - **Affected files:** `package.json` (removed `@anthropic-ai/sdk`, added `openai`),
-  `lib/ai-client.ts` (new, replaces deleted `lib/anthropic.ts`), `lib/categorize.ts`,
+  `lib/ai-client.ts` (new, replaces deleted lib/anthropic.ts), `lib/categorize.ts`,
   `app/api/chat/route.ts`, `.env.local.example`/`.env.local` (`ANTHROPIC_API_KEY` renamed to
   `AI_PLATFORM_API_KEY`), `CLAUDE.md` (tech-stack line, env var table).
 - **Verification status:** Verified — `npx tsc --noEmit`, `npm run lint`, `npm run build` all

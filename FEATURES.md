@@ -31,7 +31,7 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
   No length limit, no profanity/abuse filtering, no rate limiting.
 - **Error states:** Network-level fetch failure or a server-side error (Haiku extraction
   failure, Supabase write failure) both now surface the friendly "Something went wrong
-  reaching the assistant" message (`ChatPanel.tsx`) — the route wraps its body in try/catch
+  reaching the assistant" message (`components/ChatPanel.tsx`) — the route wraps its body in try/catch
   and returns a clean `500`, and the client checks `res.ok` before streaming. Fixed as
   `CLAUDE.md` ISSUE-002 (was previously the single most concrete "broken edge case" in this
   app; verified fixed via code review + passing checks, not yet forced-triggered live).
@@ -95,7 +95,7 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
 - **Validation:** `PATCH`/`DELETE` require a valid `id`; `PATCH` requires `status` to be
   exactly `"open"` or `"done"`.
 - **Error states:** None surfaced to the user beyond generic fetch failures (no try/catch on
-  the client side of `toggle`/`remove` in `TaskBoard.tsx`).
+  the client side of `toggle`/`remove` in `components/TaskBoard.tsx`).
 - **Loading state:** "Loading tasks…" text.
 - **Empty state:** "No tasks yet — tell the chat what you have to do, or grab a template
   above, and it'll show up here."
@@ -112,7 +112,7 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
 - **Status: Verified complete.**
 - **Frontend:** `app/ideas/page.tsx`.
 - **Backend:** `GET/POST/DELETE /api/ideas`, `lib/ideas.ts`.
-- **Database:** `ideas` table (added in migration `003_ideas.sql`).
+- **Database:** `ideas` table (added in migration `supabase/migrations/003_ideas.sql`).
 - **Permissions:** Auth required, `userId`-scoped.
 - **Validation:** `content` must be non-empty after `.trim()`.
 - **Error/loading/empty states:** All present ("Loading…", "No ideas yet — jot one down
@@ -177,7 +177,7 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
 - **Frontend:** `components/Sidebar.tsx` (set), `app/week/page.tsx` +
   `components/calendar/*` (filter/display).
 - **Backend:** `PATCH /api/categories`, `lib/tasks.ts:updateCategoryGroup`.
-- **Database:** `categories.group_name` (migration `005_category_group.sql`).
+- **Database:** `categories.group_name` (migration `supabase/migrations/005_category_group.sql`).
 - **Validation:** Server-side allow-list check (`VALID_GROUPS`) in
   `app/api/categories/route.ts`; matching DB `CHECK` constraint.
 - **Tests:** None.
@@ -201,13 +201,13 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
   stored in `localStorage`, not in the `profiles`/user record (there is no `profiles` table
   at all in this schema) — so switching browsers/devices resets the theme choice. This is
   Inferred to be intentional given the app's small scope, not a bug.
-- **Assets:** Self-hosted photos at `public/theme/<name>.jpg`, one per palette (originally the
+- **Assets:** Self-hosted photos at a chosen `public/theme/*.jpg` filename, one per palette (originally the
   first 4 were hotlinked from Unsplash — moved to self-hosted for durability at commit
   `18200e7`; the 6 newer palettes were self-hosted from the start). See `CLAUDE.md`
   ISSUE-004 and `public/theme/SOURCES.md` for all 10 photo sources.
 - **Tests:** Verified visually via ad hoc Playwright screenshots during development, across
   multiple sessions as palettes were added — see `SESSION_LOG.md`.
-- **Known issues:** None. (`ThemeProvider.tsx`'s lint error was fixed with a genuine
+- **Known issues:** None. (`components/theme/ThemeProvider.tsx`'s lint error was fixed with a genuine
   structural change — lazy `useState` initializers instead of an effect — not a suppression.)
 
 ---
@@ -237,7 +237,7 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
 - **Validation:** Content-type allow-list (JPEG/PNG/WebP/GIF), 5MB size cap, both enforced
   server-side in the API route (not just client-side).
 - **Error states:** Upload failure shows an inline error message in the theme popover
-  (`uploadError` state in `ThemeToggle.tsx`).
+  (`uploadError` state in `components/theme/ThemeToggle.tsx`).
 - **Known issues:** None — uploading a new custom background now deletes the user's prior
   upload(s) from Storage automatically (see below). No "remove custom background" control
   exists yet (switching back to a curated palette just stops referencing the uploaded file,
@@ -284,7 +284,7 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
   retrofitted onto an originally-single-tenant app.
 - **User flow:** `/login` → enter email → magic link → `/auth/callback` → signed in.
 - **Status: Verified complete.** This was the single largest engineering effort in this
-  project's history (migration `004_user_scoping.sql` plus 2 follow-up bug-fix commits for
+  project's history (migration `supabase/migrations/004_user_scoping.sql` plus 2 follow-up bug-fix commits for
   silent failure modes discovered during real-world testing — see `SESSION_LOG.md` for the
   exact debugging story: localhost-redirect links, Supabase Site URL misconfiguration, PKCE
   flow-state mismatches from forwarding links between browsers, and an email rate limit).
@@ -358,6 +358,17 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
   notes, colored by category, rather than being filterable like the calendar's group filter).
 
 ---
+
+## SEO / link-preview metadata [Verified 2026-08-16, commits `fff3db2`/`b9ca352`]
+
+- **What:** `app/opengraph-image.tsx` (a next/og-generated static branding OG card) and
+  `app/robots.ts` (`Allow: /login`, `Disallow: /` — the app is fully auth-gated, so nothing
+  else is worth crawling). `proxy.ts`'s matcher was extended to exclude `opengraph-image`
+  explicitly, since it (like `/icon`/`/apple-icon`) is a next/og route with no file extension
+  in its URL, so the existing extension-based static-asset exclusion doesn't already cover it.
+- **Status:** Live-verified against production during this doc sweep — `curl
+  https://nodability.vercel.app/robots.txt` returned the expected body, `curl -I
+  https://nodability.vercel.app/opengraph-image` returned `200 image/png`.
 
 ## Unused / dead code found during audit (not a "feature," but worth tracking)
 

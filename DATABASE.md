@@ -3,8 +3,8 @@
 - **Provider:** Supabase (managed Postgres), project ref `hwvqnenmnrzdncwznorv`
   (`NEXT_PUBLIC_SUPABASE_URL=https://hwvqnenmnrzdncwznorv.supabase.co`).
 - **Schema source:** `supabase/schema.sql` (base) + `supabase/migrations/002_date_range_and_time.sql`,
-  `003_ideas.sql`, `004_user_scoping.sql`, `005_category_group.sql`, `006_notes.sql`,
-  `007_theme_uploads_bucket.sql`, applied **manually, in numeric order**, by pasting into the
+  `supabase/migrations/003_ideas.sql`, `supabase/migrations/004_user_scoping.sql`, `supabase/migrations/005_category_group.sql`, `supabase/migrations/006_notes.sql`,
+  `supabase/migrations/007_theme_uploads_bucket.sql`, applied **manually, in numeric order**, by pasting into the
   Supabase SQL Editor. There is no Supabase CLI (`supabase/config.toml` does not exist), no
   automated migration runner, and no `down` migrations — this is forward-only. **`007` is not
   a table migration** — it inserts a row into `storage.buckets` to create the `theme-uploads`
@@ -14,22 +14,22 @@
   delete was performed during development, table confirmed empty of real data at last check).
   **This is real production data belonging to 2 real people.**
 
-## ⚠️ Known inconsistency: `schema.sql` does not replay cleanly against the migrations
+## ⚠️ Known inconsistency: `supabase/schema.sql` does not replay cleanly against the migrations
 
 `supabase/schema.sql` already contains `start_date`/`end_date`/`due_time` columns on `tasks`
-directly — but `002_date_range_and_time.sql` is written as if starting from a schema that has
+directly — but `supabase/migrations/002_date_range_and_time.sql` is written as if starting from a schema that has
 a single `due_date` column (it does `update tasks set start_date = due_date, end_date =
 due_date where due_date is not null` then `drop column if exists due_date`). This means
-**`schema.sql` was edited after the fact to reflect the post-`002` shape**, rather than
-staying a true "before `002`" snapshot. Running `schema.sql` fresh today, then `002`, would
+**`supabase/schema.sql` was edited after the fact to reflect the post-`002` shape**, rather than
+staying a true "before `002`" snapshot. Running `supabase/schema.sql` fresh today, then `002`, would
 execute the `update ... where due_date is not null` line against a table that never had a
 `due_date` column — Postgres would error (`column "due_date" does not exist`) since the
 `where` clause references a nonexistent column. **This means the migration set is not
 actually replayable from scratch as ordered.** In practice this doesn't matter for the *live*
 database (it was migrated incrementally, in the order the columns were actually added, not by
-replaying from `schema.sql`), but it matters for anyone trying to spin up a *new* Supabase
+replaying from `supabase/schema.sql`), but it matters for anyone trying to spin up a *new* Supabase
 project from these files — they would need to skip `002`'s `due_date`-migration lines (or
-run `schema.sql` alone, which already has the right shape, then skip straight to `003`).
+run `supabase/schema.sql` alone, which already has the right shape, then skip straight to `003`).
 
 ## Tables
 
@@ -69,7 +69,7 @@ run `schema.sql` alone, which already has the right shape, then skip straight to
 | `user_id` | uuid | not null, FK → `auth.users(id)`, **no ON DELETE clause** | `004` |
 
 - **Indexes:** `tasks_category_id_idx(category_id)`, `tasks_start_date_idx(start_date)`
-  (declared twice, harmless — both `schema.sql` and `002` create it with `if not exists`),
+  (declared twice, harmless — both `supabase/schema.sql` and `002` create it with `if not exists`),
   `tasks_status_idx(status)`, `tasks_user_id_idx(user_id)` (`004`).
 - **RLS:** Enabled (`004`). Policy `tasks_owner`, same owner-only shape as `categories_owner`.
 
@@ -245,7 +245,7 @@ schema, no SSNs, etc.
 
 ## Migration risks
 
-- **`004_user_scoping.sql` must run in its documented two-pass order** with a manual backfill
+- **`supabase/migrations/004_user_scoping.sql` must run in its documented two-pass order** with a manual backfill
   step in between (see the comment block at the top of that file). Running it as a single
   paste will fail: Pass 2's `set not null` on `user_id` will reject any row where the
   Pass-1-added nullable column was never backfilled.
@@ -254,5 +254,5 @@ schema, no SSNs, etc.
   set not null` and RLS policy creation (`create policy ...`, no `if not exists` guard for
   policies) are **not** safely re-runnable — re-running the policy-creation lines against a
   database that already has those policies will error with "policy already exists."
-- See the ⚠️ known inconsistency section above regarding `schema.sql` vs. `002` for anyone
+- See the ⚠️ known inconsistency section above regarding `supabase/schema.sql` vs. `002` for anyone
   provisioning a brand-new Supabase project from these files.

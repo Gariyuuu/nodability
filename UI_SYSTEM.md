@@ -80,7 +80,7 @@ app/page.tsx
 Each of the 4 palettes defines a complete light and dark variant (8 variable blocks total in
 `app/globals.css`). "System" mode resolves via `window.matchMedia("(prefers-color-scheme:
 dark)")` and re-resolves live if the OS setting changes while the app is open (a
-`matchMedia` change listener in `ThemeProvider.tsx`).
+`matchMedia` change listener in `components/theme/ThemeProvider.tsx`).
 
 ## Colors
 
@@ -89,7 +89,7 @@ dark)")` and re-resolves live if the OS setting changes while the app is open (a
 avoid drift; that file is the single source of truth. **Do not use raw Tailwind palette
 classes** (`bg-gray-100`, `text-blue-600`, etc.) anywhere in this app except for the
 intentionally palette-independent destructive-action hover state (`hover:bg-red-50
-hover:text-red-600` on delete buttons, used consistently across `TaskBoard.tsx`,
+hover:text-red-600` on delete buttons, used consistently across `components/TaskBoard.tsx`,
 `components/calendar/WeekView.tsx`, `app/ideas/page.tsx`) and the 4 fixed life-area group
 colors in `lib/groups.ts` (`GROUP_COLORS` — these are deliberately palette-independent so
 group coloring stays legible/distinct across every theme).
@@ -108,7 +108,7 @@ inputs) remain fully opaque so text stays legible.
 
 Geist Sans / Geist Mono via `next/font/google`, loaded in `app/layout.tsx` and exposed as CSS
 variables (`--font-geist-sans`, `--font-geist-mono`) → re-exposed as `--font-sans`/`--font-mono`
-in the `@theme inline` block. `globals.css`'s `body` rule still falls back to
+in the `@theme inline` block. `app/globals.css`'s `body` rule still falls back to
 `font-family: Arial, Helvetica, sans-serif` as a literal CSS property (not a Tailwind class) —
 Inferred leftover from the original Create-Next-App scaffold, likely superseded in practice by
 the Geist variable but not cleaned up.
@@ -145,12 +145,12 @@ changes are instant, not animated).
 
 ## Image asset conventions
 
-The 10 curated theme background photos are self-hosted at `public/theme/<name>.jpg`
+The 10 curated theme background photos are self-hosted at a chosen `public/theme/*.jpg` filename
 (originally the first 4 were hotlinked from `images.unsplash.com`, downloaded for
 durability — see `public/theme/SOURCES.md` for provenance), referenced via plain CSS `url()`
 in `app/globals.css`. **User-uploaded custom backgrounds are different**: they live in
 Supabase Storage (bucket `theme-uploads`, not `public/`), applied via an inline CSS custom
-property set by JavaScript (`ThemeProvider.tsx`) rather than a static stylesheet rule, since
+property set by JavaScript (`components/theme/ThemeProvider.tsx`) rather than a static stylesheet rule, since
 the URL is per-user data unknown at build time. There is no `next/image` usage anywhere in
 this app, for either kind of image. The unused Create-Next-App scaffold SVGs that used to
 live in `public/` have been deleted.
@@ -158,7 +158,7 @@ live in `public/` have been deleted.
 ## Accessibility
 
 Minimal but present: `aria-label`/`title` attributes on icon-only buttons (delete buttons in
-`TaskBoard.tsx`/`WeekView.tsx`/`app/ideas/page.tsx`, the group-cycling dot in `Sidebar.tsx`,
+`components/TaskBoard.tsx`/`components/calendar/WeekView.tsx`/`app/ideas/page.tsx`, the group-cycling dot in `components/Sidebar.tsx`,
 the theme-toggle button). No systematic audit has been performed — no confirmed keyboard-nav
 testing, no confirmed screen-reader testing, no `prefers-reduced-motion` handling (moot today
 since there are no animations).
@@ -205,6 +205,6 @@ Next.js's own defaults.
 - The theme-picker and (formerly) templates popovers use ad hoc absolute positioning with no
   shared "popover" abstraction — if a 3rd popover is added, consider extracting a shared
   component rather than copying the pattern a 3rd time.
-- `globals.css`'s literal `font-family: Arial, Helvetica, sans-serif` on `body` looks like an
+- `app/globals.css`'s literal `font-family: Arial, Helvetica, sans-serif` on `body` looks like an
   unintentional leftover from the original scaffold given Geist fonts are loaded and wired via
   CSS variables elsewhere in the same file.

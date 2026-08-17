@@ -41,7 +41,7 @@ graph TD
   `useEffect` data-fetch logic, and renders a mix of shared and page-specific components.
 - **Shared components** (`components/*.tsx`, `components/calendar/*`, `components/theme/*`):
   presentational + light state, receive callbacks from their parent page rather than fetching
-  independently (exception: `Sidebar.tsx` fetches its own `/api/categories`).
+  independently (exception: `components/Sidebar.tsx` fetches its own `/api/categories`).
 - **No routing library** beyond Next.js's file-based App Router. Navigation is plain
   `next/link` `<Link>` components; no dynamic route segments exist anywhere in this app (every
   route is a static path).
@@ -87,7 +87,7 @@ graph TD
 1. Browser requests `/` (or any protected route).
 2. `proxy.ts` runs: builds a session-aware Supabase client from request cookies, calls
    `supabase.auth.getUser()`. If no user and the path isn't public, redirects to
-   `/login?next=<path>`. If there is a user, forwards the request (refreshing the session
+   a `/login?next=` redirect carrying the original path. If there is a user, forwards the request (refreshing the session
    cookie via `setAll` if Supabase rotated it).
 3. Next.js serves the static shell of `app/page.tsx` (a Client Component — no server data
    fetch happens here).
@@ -104,7 +104,7 @@ graph TD
 
 ## Data flow (chat message → task creation)
 
-1. `ChatPanel.tsx` posts `{ message }` to `POST /api/chat`.
+1. `components/ChatPanel.tsx` posts `{ message }` to `POST /api/chat`.
 2. Route calls `requireUserId()`.
 3. Route fetches `listCategories(userId)` and `listRecentMessages(userId, 20)` in parallel.
 4. Route calls `lib/categorize.ts:extractTasks(message, categoryNames, history)` — this makes
@@ -128,6 +128,12 @@ graph TD
    via `insertMessage(userId, ...)` — **note:** if the stream errors mid-flight, these two
    `insertMessage` calls are skipped, so that turn is never saved to chat history (a known edge
    case, see `CLAUDE.md` ISSUE-002).
+
+**Client-side loading state [Verified 2026-08-16, commits `217373b`/`28f4fbb`]:** while step 7-8
+is in flight, `components/ChatPanel.tsx` renders an animated `ThinkingOrb` (from the
+`thinking-orbs` package, `state="composing"`) alongside "Thinking…" text in place of the empty
+assistant bubble — replaces the previous plain-text `"{emoji} …"` placeholder. Not yet
+live-verified against an authenticated session (current task `T-001`, see `TASKS.md`).
 
 ## Authentication flow
 
@@ -161,7 +167,7 @@ Flow: browser file input → `POST /api/theme-image` (multipart form data) → r
 auth/type/size → uploads via the **service-role** client (bypasses Storage RLS entirely,
 same trust model as every DB write in this app) → returns the bucket's public URL → client
 stores that URL in `localStorage` and applies it as an inline CSS custom property
-(`ThemeProvider.tsx`). The 10 curated theme photos are **not** in this bucket — they're
+(`components/theme/ThemeProvider.tsx`). The 10 curated theme photos are **not** in this bucket — they're
 static files in `public/theme/`, served by Next.js directly, no Storage/DB involvement.
 
 ## External API integration flow

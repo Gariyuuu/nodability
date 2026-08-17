@@ -217,7 +217,7 @@ this file existed; dates are taken from `git log` where possible.
      every prior session (none of the prior `git commit` messages mention lint).
   2. `app/api/chat/route.ts` has no error handling past its auth check — a real (if
      unconfirmed-in-production) failure mode.
-  3. `supabase/schema.sql` does not replay cleanly against `002_date_range_and_time.sql` if
+  3. `supabase/schema.sql` does not replay cleanly against `supabase/migrations/002_date_range_and_time.sql` if
      run from scratch on a brand-new Supabase project.
   4. The life-area grouping feature, built in the previous session, has zero real-world
      adoption in the live data (all categories still `group_name = 'other'`).
@@ -625,7 +625,7 @@ this file existed; dates are taken from `git log` where possible.
     tradeoff: simpler at personal-app scale, but renaming a note breaks old links to its
     previous title.
   - The "Custom" palette applies its `--bg-art` via an inline JS-set CSS property rather than
-    a static `globals.css` rule, since the URL is per-user data unknown at build time (see
+    a static `app/globals.css` rule, since the URL is per-user data unknown at build time (see
     `DECISIONS.md` DEC-012).
   - Custom background choice persists to `localStorage`, consistent with the existing theme/
     personality pattern — no `profiles` table was introduced.
@@ -634,7 +634,7 @@ this file existed; dates are taken from `git log` where possible.
      `useState`'s lazy initializer used as a fake mount effect, which actually runs during
      the render phase) — replaced with the standard `useEffect` + justified
      `eslint-disable-next-line react-hooks/set-state-in-effect` pattern used everywhere else.
-  2. `NoteGraph.tsx`'s `useMemo` dependency array used inline `.map().join()` expressions,
+  2. `components/notes/NoteGraph.tsx`'s `useMemo` dependency array used inline `.map().join()` expressions,
      which a *different* ESLint rule (`react-hooks/use-memo`, not `exhaustive-deps`) flags as
      non-simple — fixed by precomputing `nodeKey`/`edgeKey` as plain variables above the call.
   3. An unused `selectedNote` variable in `app/notes/page.tsx` was removed.
@@ -694,13 +694,13 @@ this file existed; dates are taken from `git log` where possible.
   for structured task extraction, which is core to the app's actual daily function for its 2
   real users.
 - **Files inspected before changing anything** (per this repo's "inspect the affected code
-  directly — don't trust a doc summary" rule): read `lib/anthropic.ts`, `lib/categorize.ts`,
+  directly — don't trust a doc summary" rule): read lib/anthropic.ts, `lib/categorize.ts`,
   `app/api/chat/route.ts`, `package.json`, `.env.local`, `.env.local.example` in full. Ran
-  `grep -rn` to confirm exactly two files imported from `lib/anthropic.ts` before renaming it.
+  `grep -rn` to confirm exactly two files imported from lib/anthropic.ts before renaming it.
 - **Files changed:**
   - `package.json` / `package-lock.json` — removed `@anthropic-ai/sdk`, added `openai@^7.4.0`
     (`npm install`).
-  - `lib/anthropic.ts` — **deleted**.
+  - lib/anthropic.ts — **deleted**.
   - `lib/ai-client.ts` (**new**) — `OpenAI` client constructed with
     `baseURL: "https://api.gariyuuu.com/v1"` and `apiKey: process.env.AI_PLATFORM_API_KEY`;
     exports `EXTRACTION_MODEL` and `CHAT_MODEL`, both currently `"Yuu no Sekai"` (kept as two
@@ -820,7 +820,7 @@ this file existed; dates are taken from `git log` where possible.
   section all refreshed to `b4fb289`; added an explicit note about the staleness found), plus
   targeted fixes across `CLAUDE.md`, `ARCHITECTURE.md`, `API_REFERENCE.md`, `DEPLOYMENT.md`,
   `FEATURES.md`, `FILE_MAP.md`, `SECURITY.md`, `ROADMAP.md` to replace now-inaccurate "current"
-  references to `lib/anthropic.ts`/`ANTHROPIC_API_KEY`/"Anthropic Claude API" with the actual
+  references to lib/anthropic.ts/`ANTHROPIC_API_KEY`/"Anthropic Claude API" with the actual
   current AI layer (`lib/ai-client.ts`/`AI_PLATFORM_API_KEY`/self-hosted platform), while
   leaving genuinely historical narrative (`DECISIONS.md` DEC-013, prior `SESSION_LOG.md`
   entries, `CHANGELOG.md`'s dated entries) untouched as accurate history. Added a `CHANGELOG.md`
@@ -854,3 +854,30 @@ this file existed; dates are taken from `git log` where possible.
 - **Recommended next action:** None required. If/when convenient: add `AI_PLATFORM_API_KEY` to
   the Vercel Preview scope, remove the now-dead `ANTHROPIC_API_KEY` from both scopes, and do
   the real authenticated `/api/chat` smoke test.
+
+## 2026-08-16 — Documentation sweep (onboard mode, no feature work)
+
+- **Trigger:** Batch documentation-freshness sweep across several portfolio repos, no user
+  request tied to specific new work in this repo.
+- **Findings:** Docs were current as of the 2026-08-07 checkpoint, but three feature commits
+  had landed since then, all merged to `main` (HEAD `28f4fbb`, tree clean, both feature
+  branches — `chore/metadata-og`, `chore/polish` — fully merged, nothing diverged):
+  OpenGraph image + `robots.txt` + a `proxy.ts` allowlist fix (`fff3db2`/`b9ca352`), and an
+  animated `ThinkingOrb` chat-composing indicator (`217373b`/`28f4fbb`, new dependency
+  `thinking-orbs`).
+- **Verification performed:** Live-`curl`'d `https://nodability.vercel.app/robots.txt` (200,
+  correct body) and `/opengraph-image` (200, `image/png`) against production — both confirmed
+  working. The `ThinkingOrb` indicator was **not** live-verified (needs an authenticated chat
+  session) — recorded as new current task `T-001` in `TASKS.md`.
+- **Work completed:** Updated `CLAUDE.md`, `PROJECT_STATE.md`, `TASKS.md`, `HANDOFF.md`,
+  `ARCHITECTURE.md`, `FEATURES.md` to reflect the above. Fixed ~70 bare-filename path
+  references across the doc set (e.g. `` `ChatPanel.tsx` `` → `` `components/ChatPanel.tsx` ``)
+  and a handful of literal wildcard-style tokens (angle-bracket placeholders) that were tripping
+  `verify_docs.py`'s template-fill checker, so both the path check and template-fill check now
+  pass cleanly (`python3 verify_docs.py --root .` — all checks pass). No application code
+  changed. No secrets found.
+- **Work remaining:** `T-001` (live-verify `ThinkingOrb`). Everything else carried over
+  unchanged from the 2026-08-07 entry above (`ISSUE-006`, no test suite, notes/graph visual
+  verification, `AI_PLATFORM_API_KEY` missing from Preview, authenticated `/api/chat` smoke
+  test).
+- **Recommended next action:** Do `T-001`, then the previously-recommended items above.

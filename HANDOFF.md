@@ -1,7 +1,17 @@
 # HANDOFF.md
 
 Short, high-signal onboarding for a new Claude Code account with zero access to prior chat
-history. Last updated 2026-08-07 (final-transfer-checkpoint audit).
+history. Last updated 2026-08-07 (final-transfer-checkpoint audit); re-verified and corrected
+2026-08-16 (documentation sweep, no feature work) — see the block immediately below.
+
+## 2026-08-16 update [Verified]
+
+Two more feature commits landed since 2026-08-07, both merged to `main` (HEAD `28f4fbb`,
+tree clean): OpenGraph image + `robots.txt` + a `proxy.ts` allowlist fix (`fff3db2`/`b9ca352`,
+live-verified via `curl` against production during this sweep), and an animated `ThinkingOrb`
+chat-composing indicator (`217373b`/`28f4fbb`, **not** live-verified — needs an authenticated
+session, now current task `T-001` in `TASKS.md`). Full detail in `PROJECT_STATE.md`'s
+2026-08-16 block. Everything else below this point is the original 2026-08-07 account.
 
 ## Status: new features shipped, deployed, and pushed
 
@@ -103,7 +113,7 @@ and eyeball the visual layout; (2) the longer-standing deferred items (`ISSUE-00
   precedent to copy for any future file-upload feature or Storage bucket (this app's first).
 - `lib/theme.ts` / `components/theme/ThemeProvider.tsx` — the "Custom" palette applies its
   `--bg-art` via an inline JS-set CSS property (per-user data), unlike the 10 curated
-  palettes' static `globals.css` rules. See `DECISIONS.md` DEC-012.
+  palettes' static `app/globals.css` rules. See `DECISIONS.md` DEC-012.
 - `lib/auth.ts` — the API-route auth check every route depends on.
 - `lib/supabase.ts` — the service-role client; never expose it to the client bundle.
 - `lib/tasks.ts` / `lib/ideas.ts` / `lib/messages.ts` / `lib/notes.ts` — the actual

@@ -78,7 +78,7 @@ direct-to-production via `vercel --prod --yes`.
 ## Database deployment / migration order
 
 No automated migration runner — see [DATABASE.md](DATABASE.md) for the full migration list
-and the known `schema.sql`-vs-`002` replay inconsistency. The operational rule that has
+and the known `supabase/schema.sql`-vs-`002` replay inconsistency. The operational rule that has
 actually been followed: **schema changes are applied to Supabase manually, before the
 corresponding app code is deployed**, never after.
 

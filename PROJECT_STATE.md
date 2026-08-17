@@ -3,6 +3,33 @@
 **This file describes the exact state of the repository at the moment of the last update. It
 is meant to let a new session resume from precisely this point.**
 
+## 2026-08-16 update [Verified] — read this block first, it supersedes the stale framing below
+
+A documentation-sweep session (no feature work) re-verified everything against real repo
+state and found three feature commits had landed since the 2026-08-07 checkpoint, all now
+merged to `main` (branch is clean, single-branch — `chore/metadata-og` and `chore/polish`
+both fully merged, nothing diverged):
+
+- `fff3db2`/`b9ca352` (2026-08-13/14) — added `app/opengraph-image.tsx` (next/og-generated OG
+  card) and `app/robots.ts`, and allowlisted `opengraph-image` in `proxy.ts`'s matcher (it has
+  no file extension, so the existing extension-based static-asset exclusion didn't already
+  cover it — same bug class as the `/icon` and `/theme/*.jpg` issues documented in
+  [Known issues](CLAUDE.md#known-issues)).
+- `217373b`/`28f4fbb` (2026-08-15/16) — `components/ChatPanel.tsx` now shows an animated
+  `ThinkingOrb` (new dependency: `thinking-orbs`) next to the "Thinking…" text while the
+  assistant is composing a reply, replacing the old plain-text `"{emoji} …"` placeholder.
+
+Current branch `main`, HEAD `28f4fbb`, working tree clean, nothing uncommitted. `robots.txt`
+and `/opengraph-image` were live-checked directly against production during this sweep
+(`curl https://nodability.vercel.app/robots.txt` → 200, `Allow: /login` / `Disallow: /`;
+`curl -I .../opengraph-image` → 200 `image/png`) — both confirmed working. The `ThinkingOrb`
+chat indicator was **not** live-checked (requires an authenticated chat session) — current
+task `T-001` (see `TASKS.md`): log in and send a chat message to confirm it actually renders
+during the "assistant is composing" state, since no verification detail was recorded in
+`217373b`/`28f4fbb`'s commit messages either way.
+
+The rest of this file (written 2026-08-07) is preserved below as history.
+
 - **Last updated:** 2026-08-07 — a final-transfer-checkpoint audit session. **Correction to
   this file's own prior entry below:** the AI-provider-swap session (2026-08-06, later the same
   day) documented itself here as "not committed, not pushed, not deployed" — that was true at
@@ -27,7 +54,7 @@ is meant to let a new session resume from precisely this point.**
   legacy — safe to remove in a future cleanup pass but not urgent).
 - **Uncommitted files:** none.
 - **Database/infra state:** Unchanged by the swap — no schema/RLS/migration changes were part
-  of it. Migrations `006_notes.sql` and `007_theme_uploads_bucket.sql` remain the latest
+  of it. Migrations `supabase/migrations/006_notes.sql` and `supabase/migrations/007_theme_uploads_bucket.sql` remain the latest
   applied, unverified against live Supabase in this audit (no DB access available; take on
   faith from the prior session's audit unless a session with DB access re-confirms).
 
@@ -40,7 +67,7 @@ production** (see the corrected status block above).
 
 ## Last completed task
 
-AI-provider swap: `lib/anthropic.ts` (Anthropic SDK client + `HAIKU_MODEL`/`SONNET_MODEL`
+AI-provider swap: lib/anthropic.ts (Anthropic SDK client + `HAIKU_MODEL`/`SONNET_MODEL`
 constants) replaced by `lib/ai-client.ts` (`openai` npm package client pointed at
 `https://api.gariyuuu.com/v1`, `EXTRACTION_MODEL`/`CHAT_MODEL` constants both currently
 `"Yuu no Sekai"`, the platform's one exposed model). `lib/categorize.ts`'s forced tool-use
@@ -77,7 +104,7 @@ permission) — worth doing once someone can sign in as one of the 2 real accoun
 ## Files related to the current state
 
 - `lib/ai-client.ts` (new) — the OpenAI client + model constants.
-- `lib/anthropic.ts` — **deleted**.
+- lib/anthropic.ts — **deleted**.
 - `lib/categorize.ts` — forced tool-use call, translated to OpenAI's tool-calling shape.
 - `app/api/chat/route.ts` — streaming chat reply, translated to OpenAI's streaming shape.
 - `package.json` / `package-lock.json` — dependency swap.
@@ -89,9 +116,9 @@ permission) — worth doing once someone can sign in as one of the 2 real accoun
 
 - Read `CLAUDE.md` in full, `PROJECT_STATE.md`, and `TASKS.md` before touching any code, per
   this repo's own working instructions.
-- Read the actual current contents of `lib/anthropic.ts`, `lib/categorize.ts`, and
+- Read the actual current contents of lib/anthropic.ts, `lib/categorize.ts`, and
   `app/api/chat/route.ts` directly (not trusted from a doc summary) before changing them.
-- Confirmed via `grep -rn` that exactly two files imported from `lib/anthropic.ts`
+- Confirmed via `grep -rn` that exactly two files imported from lib/anthropic.ts
   (`lib/categorize.ts`, `app/api/chat/route.ts`) before renaming it, so the rename didn't
   silently break an unnoticed third call site.
 

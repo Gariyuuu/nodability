@@ -26,7 +26,7 @@ work as uncommitted; that was corrected in the 2026-08-07 audit.
 ## 2026-08-06 — Fixed every open bug and tech-debt item (`18200e7`)
 
 Per explicit user instruction to finish all outstanding work: fixed all 9 `npm run lint`
-errors (`npm run lint` now exits 0 — genuine structural fix for `ThemeProvider.tsx`'s
+errors (`npm run lint` now exits 0 — genuine structural fix for `components/theme/ThemeProvider.tsx`'s
 localStorage hydration, justified suppressions for 3 standard fetch-on-mount patterns, fixed
 an unescaped apostrophe, replaced 4 `any` casts with real types); hardened `/api/chat` with
 proper error handling; made template application idempotent; removed the unused
@@ -52,7 +52,7 @@ verified live.
   discovered: `npm run lint` fails with 9 pre-existing errors; `app/api/chat/route.ts` has no
   error handling past its initial auth check; the life-area grouping feature is fully built
   but unused in live data; `supabase/schema.sql` does not replay cleanly against
-  `002_date_range_and_time.sql` from scratch; 4 high-severity `npm audit` advisories exist
+  `supabase/migrations/002_date_range_and_time.sql` from scratch; 4 high-severity `npm audit` advisories exist
   (transitive, build-tooling-related). Full detail in `CLAUDE.md`'s Known issues section and
   `SECURITY.md`.
 - `6b55515` Add real photo backgrounds, month/year calendar views, templates page, chat

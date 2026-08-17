@@ -2,16 +2,24 @@
 
 Active execution queue. IDs are stable — reference them in commits/`SESSION_LOG.md` entries.
 
-## Current task
+## Current task: `T-001` [added 2026-08-16]
 
-**None active.** An AI-provider swap (Anthropic Claude API → self-hosted OpenAI-compatible
+Live-verify the `ThinkingOrb` animated "assistant is composing" indicator added to
+`components/ChatPanel.tsx` in `217373b`/`28f4fbb` (2026-08-15/16, `thinking-orbs` package) —
+log into the deployed app and send a chat message, confirm the orb actually renders during
+the composing state (never checked live; the commit itself records no verification detail).
+Two other feature commits since the 2026-08-07 checkpoint (`fff3db2`/`b9ca352` — OpenGraph
+image, `robots.txt`, `proxy.ts` allowlist) **were** live-verified during this 2026-08-16 sweep
+(`curl` against production confirmed both `robots.txt` and `/opengraph-image` work) — no
+follow-up needed there. See `PROJECT_STATE.md` → "2026-08-16 update" for full detail. All
+branches (`chore/metadata-og`, `chore/polish`) are merged into `main`; nothing outstanding on
+any branch.
+
+Prior to this: an AI-provider swap (Anthropic Claude API → self-hosted OpenAI-compatible
 platform) was completed, verified, committed (`b4fb289`), pushed, and — per the 2026-08-07
-checkpoint audit's evidence (`vercel env ls`/`vercel inspect`) — is live in production. See
-`PROJECT_STATE.md` and `DECISIONS.md` → DEC-013 for full detail. (Note: this file and
-`PROJECT_STATE.md` previously said this work was uncommitted — that was stale; it was actually
-committed right after those files were written and this checkpoint corrected it.) The only
-other open item in the repo is `ISSUE-006` (deliberately-deferred `npm audit` findings) under
-"Deferred" — not an active task.
+checkpoint audit's evidence (`vercel env ls`/`vercel inspect`) — confirmed live in production.
+See `DECISIONS.md` → DEC-013 for full detail. The only other open item in the repo is
+`ISSUE-006` (deliberately-deferred `npm audit` findings) under "Deferred" — not an active task.
 
 ## Next up
 
@@ -114,13 +122,13 @@ section as new work happens.
    `f8e46ef` (pushed to `origin/main` as of `620fa67`):
    - New `/notes` page: create/edit notes, optionally tag to a category ("class"), link
      between notes with `[[Wikilink]]` syntax, view everything as a force-directed graph.
-     New `notes` table (migration `006_notes.sql`) — no stored edges table, links resolve
+     New `notes` table (migration `supabase/migrations/006_notes.sql`) — no stored edges table, links resolve
      dynamically by case-insensitive title match at read time (`lib/notes.ts`). Graph layout
      is a hand-rolled force-directed algorithm (`lib/graph-layout.ts`), no new dependency.
    - New 11th "Custom" theme palette: upload your own photo via `POST /api/theme-image`,
      stored in a new public Supabase Storage bucket (`theme-uploads`, migration
-     `007_theme_uploads_bucket.sql`), applied at runtime via an inline `--bg-art` CSS
-     property (per-user data, unlike the 10 curated palettes' static `globals.css` rules).
+     `supabase/migrations/007_theme_uploads_bucket.sql`), applied at runtime via an inline `--bg-art` CSS
+     property (per-user data, unlike the 10 curated palettes' static `app/globals.css` rules).
    - This is the app's first file-upload feature and first new data table since the original
      schema — both are now the precedent to copy for any future upload feature/bucket.
    - Verified: `tsc`/`lint`/`build` all exit 0; real end-to-end test of the Storage upload
@@ -136,7 +144,7 @@ section as new work happens.
    - Built a multi-personality AI chat system: `lib/personalities.ts` defines 5 characters
      (Nodo, Rex, Sage, Turbo, Professor Hoot); `lib/prompts.ts` refactored into a shared
      `buildSystemPrompt(personality)` so behavioral/grounding rules stay identical across
-     all of them; `/api/chat` accepts `personalityId`; `ChatPanel.tsx` got a picker UI
+     all of them; `/api/chat` accepts `personalityId`; `components/ChatPanel.tsx` got a picker UI
      persisted to `localStorage`.
    - Liveliness/emoji pass across nav links, headers, empty/loading states, template cards,
      calendar tabs, and a completed-task celebration emoji.
@@ -146,12 +154,12 @@ section as new work happens.
      paths + Playwright screenshots of 3 new palettes confirming legibility.
 4. **Fixed every open bug/tech-debt item in one session** — commit `18200e7`:
    - `BUG-001` — all 9 `npm run lint` errors fixed (`npm run lint` now exits 0). Real
-     structural fix for `ThemeProvider.tsx` (lazy `useState` initializers replacing an
+     structural fix for `components/theme/ThemeProvider.tsx` (lazy `useState` initializers replacing an
      effect); justified `eslint-disable-next-line` for the 3 fetch-on-mount cases; fixed
-     the unescaped apostrophe in `ChatPanel.tsx`; replaced 4 `any` casts in `lib/tasks.ts`
+     the unescaped apostrophe in `components/ChatPanel.tsx`; replaced 4 `any` casts in `lib/tasks.ts`
      with real interfaces.
    - `BUG-002` — `/api/chat` now wraps its body in try/catch, returns a clean `500` on
-     failure; `ChatPanel.tsx` checks `res.ok` before streaming.
+     failure; `components/ChatPanel.tsx` checks `res.ok` before streaming.
    - `TODO-002` — template application is now idempotent
      (`lib/tasks.ts:taskExistsWithTitle`).
    - `TODO-004` — removed the unused `is_recall_query` field entirely.
