@@ -82,8 +82,9 @@ anymore. Rewrote `components/TaskBoard.tsx`; extended `lib/tasks.ts` (`createTas
 `updateTask`, `reorderTasks`, `createCategory`, `deleteCategoryById`, `hasSortOrderColumn`);
 `POST /api/tasks` added and `PATCH /api/tasks` generalized beyond status; new
 `app/api/tasks/reorder/route.ts`; `POST`/`DELETE /api/categories` added; new migration
-`supabase/migrations/008_task_sort_order.sql`. **Two caveats:** the work is uncommitted and
-undeployed as of this writing, and **migration `008` has not been run** — the code probes for
+`supabase/migrations/008_task_sort_order.sql`. Committed as `622c9f7`, pushed to `origin/main`, and deployed
+(live-verified against production: the new endpoints answer 401 while a nonexistent route
+404s). **One caveat:** **migration `008` has not been run** — the code probes for
 `tasks.sort_order` (Postgres `42703`) and strips it from writes when it's absent, so the app is
 safe either way, but within-list ordering won't stick until a human runs the SQL (`T-002`).
 Verified: `tsc`/`lint`/`build` exit 0, all new endpoints 401 logged out, 16/16 real-browser

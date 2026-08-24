@@ -9,7 +9,7 @@ hand-maintained, user-facing summary — the two are related but not identical; 
 No CHANGELOG.md existed in this repository before this entry — this file is new, not a
 rewrite of prior history. No dates or versions below are invented.
 
-## 2026-08-24 — Drag-and-drop board + hand-editable tasks (uncommitted at time of writing)
+## 2026-08-24 — Drag-and-drop board + hand-editable tasks (`622c9f7`)
 
 The task board became directly manipulable instead of read-mostly. `components/TaskBoard.tsx`
 was rewritten: each category renders as a drop box, tasks drag between and within boxes

@@ -13,12 +13,17 @@ empty lists, and deleting empty ones. Rewrote `components/TaskBoard.tsx`, extend
 `lib/tasks.ts` and the tasks/categories API routes, added `app/api/tasks/reorder/route.ts` and
 migration `008_task_sort_order.sql`.
 
-**The one thing a next session must know:** **migration `008` has not been run** against the live database. The code deliberately
-   tolerates that (it probes for `tasks.sort_order` and drops it from writes when absent), so
-   nothing breaks — but within-list drag order won't persist until a human pastes the SQL into
-   the Supabase SQL Editor. That's `T-002` in `TASKS.md`, and the one code path that could not
-   be verified before shipping. Everything else was: `tsc`/`lint`/`build` clean, all new
-   endpoints 401 when logged out, and 16/16 real-browser interaction checks.
+The feature is committed (`622c9f7`), pushed to `origin/main`, and **live in production** at
+https://nodability.vercel.app — verified post-deploy by the new endpoints answering 401 (route
+present, auth gate) where a nonexistent route 404s.
+
+**The one thing a next session must know:** **migration `008` has not been run** against the
+live database. The code deliberately tolerates that (it probes for `tasks.sort_order` and drops
+it from writes when absent), so nothing breaks — but within-list drag order won't persist until
+a human pastes the SQL into the Supabase SQL Editor. That's `T-002` in `TASKS.md`, and the one
+code path that could not be verified before shipping. Everything else was:
+`tsc`/`lint`/`build` clean, all new endpoints 401 when logged out, and 16/16 real-browser
+interaction checks.
 
 See `PROJECT_STATE.md`'s 2026-08-24 block, `DECISIONS.md` DEC-014, and `FEATURES.md` §2.
 

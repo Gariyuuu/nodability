@@ -13,7 +13,8 @@ Two steps, in this order:
    notice saying so, and `PATCH /api/tasks/reorder` returns `{"ordered": false}`.
    *Only a human can do this: there is no migration runner and the service-role key cannot
    execute DDL.*
-2. **Live-verify the ordering write** afterwards, logged in on the deployed app: drag a task
+2. **Live-verify the ordering write** afterwards, logged in on the deployed app (the feature
+   itself is already live — `622c9f7`, deployed 2026-08-24): drag a task
    within a list, reload, confirm the order stuck. This is the one code path from the
    2026-08-24 feature work that could not be verified before shipping (everything else was —
    see `SESSION_LOG.md`).
