@@ -931,3 +931,15 @@ this file existed; dates are taken from `git log` where possible.
   deployed yet — this repo deploys manually (`vercel --prod --yes`); `git push` does not.
 - **Recommended next action:** Run migration `008`, then commit + `vercel --prod --yes`, then
   do the `T-002` live check on production.
+
+### 2026-08-24 (same session, follow-up) — committed, pushed, deployed
+
+At the user's instruction ("push it and send updated live link"): committed as `622c9f7`,
+pushed to `origin/main` (`28f4fbb..622c9f7`), and deployed with `vercel --prod --yes` →
+`nodability-lq9handlc-…`, which `vercel inspect nodability.vercel.app` confirms is the
+deployment behind the production alias. **Live-verified after deploy** (logged out, against
+https://nodability.vercel.app): `PATCH /api/tasks/reorder` → 401, `POST /api/tasks` → 401,
+`DELETE /api/categories` → 401, `GET /login` → 200, and a deliberately nonexistent route
+(`PATCH /api/tasks/nonexistent`) → 404 — so the 401s prove the *new* build is serving, not the
+previous one. Migration `008` is still unrun, so within-list ordering is still in its
+degraded-but-announced state (`T-002`).

@@ -8,7 +8,10 @@ is meant to let a new session resume from precisely this point.**
 Feature session, at the user's request: make the task board directly manipulable — drag tasks
 around like boxes, and edit tasks by hand instead of always asking the chat assistant.
 
-**Shipped in the working tree (NOT yet committed, NOT yet deployed as of this writing):**
+**Shipped, committed (`622c9f7`), pushed to `origin/main`, and deployed to production**
+(`vercel --prod --yes` → `nodability-lq9handlc…`, aliased to https://nodability.vercel.app;
+confirmed live by `PATCH /api/tasks/reorder` → 401 and `POST /api/tasks` → 401 against
+production, versus 404 for a route that doesn't exist — i.e. the new build is serving):
 
 - `components/TaskBoard.tsx` — rewritten. One bordered box per category (plus Uncategorized
   when non-empty); native HTML5 drag-and-drop between and within boxes with a drop-position
@@ -30,7 +33,7 @@ within-list reorder, exact reorder payloads, inline edit, re-listing via the dro
 hand-add, list creation, dropping into an empty list, delete-button visibility rule.
 
 **Not verified (the honest gap):** the `sort_order` write path, because migration `008` has not
-been applied — confirmed directly against the live database, which returns
+been applied as of this deploy — confirmed directly against the live database, which returns
 `{"code":"42703","message":"column tasks.sort_order does not exist"}`. The code is written to
 tolerate exactly this (see `DECISIONS.md` DEC-014), so the board is safe to deploy in either
 order, but within-list ordering won't stick until a human runs the SQL. That's `T-002`.

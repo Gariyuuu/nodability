@@ -13,9 +13,7 @@ empty lists, and deleting empty ones. Rewrote `components/TaskBoard.tsx`, extend
 `lib/tasks.ts` and the tasks/categories API routes, added `app/api/tasks/reorder/route.ts` and
 migration `008_task_sort_order.sql`.
 
-**Two things a next session must know:**
-1. **The work is uncommitted and undeployed** as of this writing.
-2. **Migration `008` has not been run** against the live database. The code deliberately
+**The one thing a next session must know:** **migration `008` has not been run** against the live database. The code deliberately
    tolerates that (it probes for `tasks.sort_order` and drops it from writes when absent), so
    nothing breaks — but within-list drag order won't persist until a human pastes the SQL into
    the Supabase SQL Editor. That's `T-002` in `TASKS.md`, and the one code path that could not
