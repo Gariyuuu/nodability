@@ -83,25 +83,50 @@ Backend only / Mocked / Planned / Broken / Deprecated / Unable to verify.
 
 ---
 
-## 2. Task board (list view, grouped by category)
+## 2. Task board (drag-and-drop lists, hand-editable) [substantially expanded 2026-08-24]
 
-- **Purpose:** Browse/toggle/delete tasks, grouped by category, with a category filter.
-- **User flow:** `/` → `Sidebar` category list on the left, `TaskBoard` list in the middle.
-- **Status: Verified complete.**
+- **Purpose:** Browse/toggle/delete tasks grouped into category "lists," **and** organize them
+  by hand — drag tasks between and within lists, edit any task's fields inline, add tasks
+  directly, and create/delete lists — without going through the chat assistant.
+- **User flow:** `/` → `Sidebar` category filter on the left, `TaskBoard` boxes in the middle.
+  Each category renders as a bordered box (plus an "Uncategorized" box when it holds tasks).
+  Drag a task onto another box to re-list it, or above/below a sibling to reorder it; a thin
+  accent line marks the drop position and the target box highlights. Click a task's title to
+  open an inline edit form (title, list, from/to dates, time). `＋` on a box header adds a task
+  straight into that box; `＋ New list` at the top creates an empty box; `🗑` on an *empty* box
+  deletes that list.
+- **Status: Verified complete** (see Tests below), with one deliberate degradation path:
+  within-list ordering only persists once migration `008` has been run.
 - **Frontend:** `components/TaskBoard.tsx`, `components/Sidebar.tsx`, `app/page.tsx`.
-- **Backend:** `GET/PATCH/DELETE /api/tasks`, `GET /api/categories`.
-- **Database:** `tasks`, `categories`.
-- **Permissions:** Auth required, `userId`-scoped.
-- **Validation:** `PATCH`/`DELETE` require a valid `id`; `PATCH` requires `status` to be
-  exactly `"open"` or `"done"`.
-- **Error states:** None surfaced to the user beyond generic fetch failures (no try/catch on
-  the client side of `toggle`/`remove` in `components/TaskBoard.tsx`).
+- **Backend:** `GET/POST/PATCH/DELETE /api/tasks`, `PATCH /api/tasks/reorder`,
+  `GET/POST/DELETE /api/categories`.
+- **Database:** `tasks` (incl. `sort_order`, migration `008`), `categories`.
+- **Permissions:** Auth required, `userId`-scoped — verified logged-out: every one of the new
+  endpoints returns 401.
+- **Validation:** `title` must be non-empty on create and on edit; `PATCH /api/tasks` rejects a
+  body with no editable field; `PATCH /api/tasks/reorder` type-checks `orderedIds`/`categoryId`/
+  `movedTaskId`; `DELETE /api/categories` returns 409 while the list still has tasks.
+- **Error states:** A failed save/move/add shows a dismissible inline notice above the boxes
+  ("Couldn't save that move — refresh to see the real order", etc.). The same notice channel
+  reports the missing-migration case.
 - **Loading state:** "Loading tasks…" text.
-- **Empty state:** "No tasks yet — tell the chat what you have to do, or grab a template
-  above, and it'll show up here."
-- **Tests:** None.
-- **Known issues:** None. (The `react-hooks/set-state-in-effect` lint error previously here
-  was fixed via a justified `eslint-disable-next-line` — see `CLAUDE.md` ISSUE-001.)
+- **Empty state:** "No tasks yet — tell the chat what you have to do, grab a template above, or
+  make a list and add them yourself." Empty boxes read "Drop tasks here."
+- **Edge cases handled:** Reordering within a box (the dragged task's own slot is discounted
+  from the drop index); dropping into a brand-new empty box; dropping into the Uncategorized
+  box (`category_id: null`); moving the last task out of a list leaves the now-empty list in
+  place (unlike `DELETE /api/tasks`, which still auto-deletes an emptied category — that
+  asymmetry is deliberate, see `DECISIONS.md` DEC-014).
+- **Tests:** No committed suite (this repo has none), but this feature was driven in a real
+  Chromium browser via a throwaway Playwright harness against stubbed API responses —
+  16/16 checks passed, covering cross-list drag, within-list reorder, the exact
+  `/api/tasks/reorder` payloads, inline edit (title + date), re-listing via the edit form's
+  dropdown, hand-adding a task, creating a list, dropping into a new empty list, and the
+  delete-button-hidden-when-non-empty rule. The harness was not committed, matching this
+  repo's existing practice.
+- **Known issues:** Native HTML5 drag-and-drop means **no touch/mobile drag** — on a phone,
+  moving a task requires the edit form's list dropdown (which does work). Drag is also not
+  keyboard-operable; same fallback applies.
 
 ---
 

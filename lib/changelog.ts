@@ -9,6 +9,17 @@ export interface ChangelogEntry {
 // mentioning. Newest first.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.9",
+    date: "2026-08-24",
+    title: "Move your tasks around and edit them yourself",
+    notes: [
+      "Drag any task to reorder it, or drop it into a different list — no need to ask Nodo to move things",
+      "Click a task to edit it yourself: rename it, change its list, set or clear its dates and time",
+      "Add a task straight into a list with the ＋ button, and make new empty lists with ＋ New list",
+      "Empty lists stick around as drop targets, and can be deleted with the 🗑 button",
+    ],
+  },
+  {
     version: "0.8",
     date: "2026-08-06",
     title: "Linked notes and custom backgrounds",

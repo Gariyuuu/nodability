@@ -30,15 +30,53 @@ inconsistency is worth normalizing if you touch this route.
   by `user_id`.
 - **Known issues:** No pagination.
 
+## `POST /api/tasks` [added 2026-08-24]
+- **Source file:** `app/api/tasks/route.ts`
+- **Purpose:** Create a task **by hand** from the board, bypassing the chat/extraction flow.
+- **Auth:** Required.
+- **Request body:** `{ "title": "string", "categoryName": "string|null",
+  "startDate": "YYYY-MM-DD|null", "endDate": "YYYY-MM-DD|null", "dueTime": "HH:MM|null" }`
+- **Response 200:** `{ "task": { ...Task, "category_name": "string|null" } }`
+- **Validation:** 400 `{"error":"title is required"}` if `title` is missing or blank.
+- **Side effects/DB:** `getOrCreateCategory` (case-insensitive, may insert a new category row),
+  then `insert into tasks`. `sort_order` is set to the bottom of the target box when the column
+  exists (migration `008`) and omitted otherwise.
+
 ## `PATCH /api/tasks`
 - **Source file:** `app/api/tasks/route.ts`
-- **Purpose:** Toggle a task's status.
+- **Purpose:** Edit a task. Originally status-only (the checkbox); since 2026-08-24 it accepts
+  any subset of the editable fields, so the board's inline edit form uses the same route.
 - **Auth:** Required.
-- **Request body:** `{ "id": "uuid", "status": "open" | "done" }`
-- **Response 200:** `{ "task": { ...Task } }`
-- **Validation:** 400 if `id` missing or `status` is not exactly `"open"`/`"done"`.
-- **Errors:** 401 unauthorized; 400 `{"error":"id and valid status are required"}`.
-- **Side effects/DB:** `update tasks set status = ... where id = ... and user_id = ...`.
+- **Request body:** `{ "id": "uuid" }` plus **any subset** of `status` (`"open"|"done"`),
+  `title` (non-empty string), `categoryName` (`string|null` — `null` means uncategorized),
+  `startDate`, `endDate` (`"YYYY-MM-DD"|null`), `dueTime` (`"HH:MM"|null`). Only the keys
+  actually present are written, so a title-only save can't blank the dates.
+- **Response 200:** `{ "task": { ...Task, "category_name": "string|null" } }`
+- **Validation:** 400 if `id` missing, if `status` is present but not `"open"`/`"done"`, if
+  `title` is present but blank, or if no editable field was supplied at all.
+- **Errors:** 401 unauthorized; 400 with the specific message.
+- **Side effects/DB:** `update tasks ... where id = ... and user_id = ...`. A `categoryName`
+  change runs `getOrCreateCategory` first and can create a category row. Unlike
+  `DELETE /api/tasks`, moving the last task out of a category does **not** delete that
+  category — an empty box is still a drop target on the board.
+
+## `PATCH /api/tasks/reorder` [added 2026-08-24]
+- **Source file:** `app/api/tasks/reorder/route.ts`
+- **Purpose:** Persist a drag-and-drop on the board — re-parent the dragged task into its new
+  list, then write the whole target list's top-to-bottom order.
+- **Auth:** Required.
+- **Request body:** `{ "categoryId": "uuid|null", "orderedIds": ["uuid", ...],
+  "movedTaskId": "uuid|null" }` — `orderedIds` is the target box's **full** contents in their
+  new order; `movedTaskId` is only set when the task changed boxes; `categoryId: null` means
+  the Uncategorized box.
+- **Response 200:** `{ "ordered": true|false }` — `false` means `tasks.sort_order`
+  (migration `008`) doesn't exist yet, so the re-parenting was saved but the within-box
+  position was not. The board surfaces that as a dismissible notice.
+- **Validation:** 400 if `orderedIds` isn't an array of strings, `categoryId` isn't a string or
+  `null`, or `movedTaskId` isn't a string when present.
+- **Side effects/DB:** One `update` for the moved task's `category_id`, then one `update` per
+  id in `orderedIds` setting `sort_order` to its index (skipped entirely when the column is
+  missing). Every statement is scoped by `user_id`.
 
 ## `DELETE /api/tasks`
 - **Source file:** `app/api/tasks/route.ts`
@@ -70,6 +108,27 @@ inconsistency is worth normalizing if you touch this route.
   (`VALID_GROUPS` in the route file, kept in sync with the DB CHECK constraint in migration
   `005`).
 - **Errors:** 401 unauthorized; 400 `{"error":"id and valid group are required"}`.
+
+## `POST /api/categories` [added 2026-08-24]
+- **Source file:** `app/api/categories/route.ts`
+- **Purpose:** Create an empty list by hand, so there's a box to drag tasks into before any
+  task belongs to it.
+- **Auth:** Required.
+- **Request body:** `{ "name": "string" }`
+- **Response 200:** `{ "category": { "id", "name", "group_name" } }` — idempotent by
+  case-insensitive name (`getOrCreateCategory`), so re-creating an existing list returns it.
+- **Validation:** 400 `{"error":"name is required"}` if missing/blank.
+
+## `DELETE /api/categories` [added 2026-08-24]
+- **Source file:** `app/api/categories/route.ts`
+- **Purpose:** Delete a list the user emptied out.
+- **Auth:** Required.
+- **Request body:** `{ "id": "uuid" }`
+- **Response 200:** `{ "ok": true }`
+- **Errors:** 401 unauthorized; 400 if `id` missing; **409**
+  `{"error":"category still has tasks","taskCount":n}` — refused while tasks reference it
+  (`categories.id` has no `ON DELETE` clause, so the DB would reject it anyway; see
+  `DATABASE.md`). The board only shows the delete button on boxes that are already empty.
 
 ---
 

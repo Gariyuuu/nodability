@@ -4,6 +4,26 @@ Short, high-signal onboarding for a new Claude Code account with zero access to 
 history. Last updated 2026-08-07 (final-transfer-checkpoint audit); re-verified and corrected
 2026-08-16 (documentation sweep, no feature work) — see the block immediately below.
 
+## 2026-08-24 update [Verified] — newest block, read first
+
+A feature session made the task board directly manipulable, at the user's request: tasks can
+now be **dragged** between and within category boxes, and **edited by hand** (title, list,
+dates, time) instead of only through the chat assistant — plus hand-adding tasks, creating
+empty lists, and deleting empty ones. Rewrote `components/TaskBoard.tsx`, extended
+`lib/tasks.ts` and the tasks/categories API routes, added `app/api/tasks/reorder/route.ts` and
+migration `008_task_sort_order.sql`.
+
+**Two things a next session must know:**
+1. **The work is uncommitted and undeployed** as of this writing.
+2. **Migration `008` has not been run** against the live database. The code deliberately
+   tolerates that (it probes for `tasks.sort_order` and drops it from writes when absent), so
+   nothing breaks — but within-list drag order won't persist until a human pastes the SQL into
+   the Supabase SQL Editor. That's `T-002` in `TASKS.md`, and the one code path that could not
+   be verified before shipping. Everything else was: `tsc`/`lint`/`build` clean, all new
+   endpoints 401 when logged out, and 16/16 real-browser interaction checks.
+
+See `PROJECT_STATE.md`'s 2026-08-24 block, `DECISIONS.md` DEC-014, and `FEATURES.md` §2.
+
 ## 2026-08-16 update [Verified]
 
 Two more feature commits landed since 2026-08-07, both merged to `main` (HEAD `28f4fbb`,

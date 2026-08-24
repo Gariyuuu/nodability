@@ -323,3 +323,57 @@ reasoning directly). No developer was interviewed to produce this file — do no
   shaped, correctly parsed structured output on every call; the streaming chat-reply path was
   verified with the same request shape used in `app/api/chat/route.ts`, returning an 11-chunk
   streamed reply grounded in injected task context.
+
+
+## DEC-014 — Hand-rolled HTML5 drag-and-drop, and a schema migration the app can live without
+
+- **Date:** 2026-08-24
+- **Status:** Accepted
+- **Context:** The user asked to be able to drag tasks around between category "boxes" and to
+  edit tasks by hand instead of always asking the chat assistant to do it. Two sub-decisions
+  followed: how to implement dragging, and how to handle the new `tasks.sort_order` column,
+  given that this repo's migrations are applied **manually** by pasting SQL into the Supabase
+  SQL Editor (there is no migration runner) while deploys happen separately via
+  `vercel --prod`.
+- **Decision:** (1) Use the browser's native HTML5 drag-and-drop API directly — `draggable`,
+  `onDragStart`/`onDragOver`/`onDrop`, with drop position derived from the pointer's position
+  within the hovered task's bounding box — rather than adding `dnd-kit`, `react-beautiful-dnd`,
+  or similar. (2) Ship the ordering column as optional: `lib/tasks.ts:hasSortOrderColumn()`
+  probes for `sort_order` once per server process, keying on Postgres error code `42703`
+  (undefined_column), and every write strips the field when it's missing;
+  `PATCH /api/tasks/reorder` reports `{"ordered": false}` in that state and the board shows a
+  notice naming the migration file. Ordering is applied in JS in `listTasks` rather than with
+  `.order("sort_order")` for the same reason. (3) Moving a task out of a category deliberately
+  does **not** delete the emptied category, even though `deleteTask` still does — an empty box
+  is a useful drop target, and lists can now be created deliberately.
+- **Reasoning:** (1) matches this repo's established habit of hand-rolling small mechanisms
+  rather than taking dependencies (`lib/graph-layout.ts` is the precedent — a hand-written
+  force-directed layout instead of a graph library); a drag library would be a larger
+  dependency than the ~60 lines of event handling it replaces, on an app with no test suite to
+  catch a future breaking upgrade. (2) removes the deploy-ordering hazard called out in
+  `DEPLOYMENT.md`: normally app code depending on a new column must not reach production
+  before the SQL is run, and since the SQL can only be run by a human in a browser, that
+  ordering can't be guaranteed from here. With the probe, either order is safe.
+- **Alternatives considered:** `dnd-kit` (best-in-class, has keyboard and touch sensors —
+  rejected as disproportionate here, but it is the obvious upgrade path if mobile drag is ever
+  wanted); making `sort_order NOT NULL DEFAULT 0` (rejected — a default would silently reorder
+  existing tasks, which are currently ordered by `start_date`); blocking the feature entirely
+  until the migration was run (rejected — the user asked for the feature now, and the
+  degradation is small and clearly surfaced).
+- **Consequences:** Drag works only with a mouse/trackpad — **no touch and no keyboard**. The
+  edit form's list dropdown is the accessible/mobile path for moving a task and must not be
+  removed. `sort_order` being nullable means "never dragged," which sorts after every arranged
+  task; anything that later reads task order must go through `listTasks` (which applies the JS
+  sort) rather than re-querying `tasks` and assuming DB order. If migration `008` is never run,
+  the app stays fully functional minus within-list ordering.
+- **Affected files:** `supabase/migrations/008_task_sort_order.sql` (new), `lib/tasks.ts`,
+  `app/api/tasks/route.ts`, `app/api/tasks/reorder/route.ts` (new),
+  `app/api/categories/route.ts`, `components/TaskBoard.tsx`, `app/page.tsx`.
+- **Verification status:** Verified for everything except the post-migration ordering write.
+  `npx tsc --noEmit`, `npm run lint`, `npm run build` all exit 0; all five new/changed
+  endpoints return 401 when logged out; the board was driven in a real Chromium browser
+  (Playwright, stubbed API) with 16/16 interaction checks passing; the live database was
+  confirmed to return `42703` for `select sort_order`, which is the exact branch the
+  degradation path keys on. **Not verified:** the `sort_order` write path itself, which cannot
+  run until migration `008` is applied to the live database (no local/staging DB exists, and
+  the service-role key cannot execute DDL) — tracked as `T-002` in `TASKS.md`.

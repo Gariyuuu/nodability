@@ -2,7 +2,25 @@
 
 Active execution queue. IDs are stable — reference them in commits/`SESSION_LOG.md` entries.
 
-## Current task: `T-001` [added 2026-08-16]
+## Current task: `T-002` [added 2026-08-24] — run migration `008`, then live-verify the board
+
+Two steps, in this order:
+
+1. **Run `supabase/migrations/008_task_sort_order.sql`** in the Supabase SQL Editor
+   (`https://supabase.com/dashboard/project/hwvqnenmnrzdncwznorv/sql/new`). It's a single
+   `alter table` + `create index`, safe to paste whole. Until it runs, dragging a task into a
+   different list persists but its position *within* a list does not — the board shows a
+   notice saying so, and `PATCH /api/tasks/reorder` returns `{"ordered": false}`.
+   *Only a human can do this: there is no migration runner and the service-role key cannot
+   execute DDL.*
+2. **Live-verify the ordering write** afterwards, logged in on the deployed app: drag a task
+   within a list, reload, confirm the order stuck. This is the one code path from the
+   2026-08-24 feature work that could not be verified before shipping (everything else was —
+   see `SESSION_LOG.md`).
+
+Also still open from before: `T-001` below.
+
+## `T-001` [added 2026-08-16]
 
 Live-verify the `ThinkingOrb` animated "assistant is composing" indicator added to
 `components/ChatPanel.tsx` in `217373b`/`28f4fbb` (2026-08-15/16, `thinking-orbs` package) —
@@ -23,7 +41,11 @@ See `DECISIONS.md` → DEC-013 for full detail. The only other open item in the 
 
 ## Next up
 
-Nothing queued. A real logged-in end-to-end smoke test of `/api/chat` against production (never
+If mobile/touch drag is ever wanted, that's a real gap — the board uses native HTML5
+drag-and-drop, which doesn't fire on touch (or keyboard). The edit form's list dropdown is the
+current fallback; `dnd-kit` is the obvious upgrade path (see `DECISIONS.md` DEC-014).
+
+A real logged-in end-to-end smoke test of `/api/chat` against production (never
 done for the AI-provider swap) is the most valuable next check. Otherwise good candidates from
 "Technical debt"/"Testing needed" below, or a new feature request from the user.
 

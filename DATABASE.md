@@ -67,9 +67,11 @@ run `supabase/schema.sql` alone, which already has the right shape, then skip st
 | `source_message_id` | uuid | nullable, **no FK constraint** — not linked to `messages.id` at the DB level despite the name | schema.sql |
 | `created_at` | timestamptz | not null, default `now()` | schema.sql |
 | `user_id` | uuid | not null, FK → `auth.users(id)`, **no ON DELETE clause** | `004` |
+| `sort_order` | integer | nullable — hand-dragged position within its category box, 0-based; `null` means "never dragged," which sorts after every arranged task (ordering is applied in JS in `lib/tasks.ts:listTasks`, not in SQL) | `008` |
 
-- **Indexes:** `tasks_category_id_idx(category_id)`, `tasks_start_date_idx(start_date)`
-  (declared twice, harmless — both `supabase/schema.sql` and `002` create it with `if not exists`),
+- **Indexes:** `tasks_category_id_idx(category_id)`, `tasks_start_date_idx(start_date)`,
+  `tasks_sort_order_idx(category_id, sort_order)` (`008`)
+  (`tasks_start_date_idx` is declared twice, harmless — both `supabase/schema.sql` and `002` create it with `if not exists`),
   `tasks_status_idx(status)`, `tasks_user_id_idx(user_id)` (`004`).
 - **RLS:** Enabled (`004`). Policy `tasks_owner`, same owner-only shape as `categories_owner`.
 
@@ -256,3 +258,20 @@ schema, no SSNs, etc.
   database that already has those policies will error with "policy already exists."
 - See the ⚠️ known inconsistency section above regarding `supabase/schema.sql` vs. `002` for anyone
   provisioning a brand-new Supabase project from these files.
+
+
+## Migration `008_task_sort_order.sql` [2026-08-24]
+
+Adds `tasks.sort_order integer` (nullable) plus `tasks_sort_order_idx(category_id, sort_order)`,
+backing drag-and-drop ordering on the task board. Single pass, safe to paste whole into the
+Supabase SQL Editor.
+
+**This migration is optional for the app to run**, unusually for this repo. `lib/tasks.ts`
+probes for the column once per server process (`hasSortOrderColumn`, keyed on Postgres error
+`42703` = undefined_column) and strips `sort_order` from every write when it's absent — so
+deploying the board's code *before* running the migration is safe: dragging a task between
+lists still works and persists, only the position *within* a list is forgotten on reload.
+`PATCH /api/tasks/reorder` returns `{"ordered": false}` in that state and the board shows a
+notice pointing at this file. Verified 2026-08-24: before the migration, the live database
+returns `{"code":"42703","message":"column tasks.sort_order does not exist"}` for a
+`select sort_order` — exactly the code the probe branches on.

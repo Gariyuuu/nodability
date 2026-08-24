@@ -9,6 +9,22 @@ hand-maintained, user-facing summary — the two are related but not identical; 
 No CHANGELOG.md existed in this repository before this entry — this file is new, not a
 rewrite of prior history. No dates or versions below are invented.
 
+## 2026-08-24 — Drag-and-drop board + hand-editable tasks (uncommitted at time of writing)
+
+The task board became directly manipulable instead of read-mostly. `components/TaskBoard.tsx`
+was rewritten: each category renders as a drop box, tasks drag between and within boxes
+(native HTML5 DnD, no new dependency), clicking a task opens an inline edit form (title, list,
+from/to dates, time), `＋` adds a task into a box, `＋ New list` creates an empty box, and an
+empty box can be deleted. New/changed API surface: `POST /api/tasks`, an extended
+`PATCH /api/tasks` (any subset of editable fields, was status-only), new
+`PATCH /api/tasks/reorder`, `POST`/`DELETE /api/categories`. New migration
+`008_task_sort_order.sql` adds `tasks.sort_order` — deliberately optional: the app probes for
+the column and degrades to "moves persist, within-list order doesn't" if it hasn't been run
+(see `DECISIONS.md` DEC-014). Verified: `tsc`/`lint`/`build` exit 0; all new endpoints 401 when
+logged out; 16/16 browser interaction checks via a throwaway Playwright harness against
+stubbed APIs. Not verified: the `sort_order` write path, which needs migration `008` applied to
+the live database first (`TASKS.md` `T-002`).
+
 ## 2026-08-06 (later) — AI-provider swap: Anthropic → self-hosted platform (`b4fb289`)
 
 Replaced the direct Anthropic API integration with a self-hosted, OpenAI-compatible platform

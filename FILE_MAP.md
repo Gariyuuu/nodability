@@ -255,8 +255,32 @@ Practical map of files a future coding agent is likely to touch. Trivial generat
   ISSUE-003 for its current low real-world usage.
 
 ## `components/TaskBoard.tsx`
-- **Purpose:** The category-grouped task list on the main board (`app/page.tsx`).
-- **Risk:** Low.
+- **Purpose:** The main board's task lists — one bordered "box" per category (plus an
+  Uncategorized box when it has tasks). Owns all of the board's direct-manipulation UX:
+  HTML5 drag-and-drop between/within boxes, the inline add-a-task form, the inline edit form,
+  and creating/deleting lists. Fetches both `/api/tasks` and `/api/categories` (it needs the
+  category list to render empty boxes as drop targets, which the task list alone can't give it).
+- **Called by:** `app/page.tsx`, which passes `refreshKey`, `filterCategory` and
+  `onDataChanged` (a callback that bumps `refreshKey` so the `Sidebar` resyncs after a change
+  that adds or removes a category).
+- **Calls:** `/api/tasks` (GET/POST/PATCH/DELETE), `/api/tasks/reorder` (PATCH),
+  `/api/categories` (GET/POST/DELETE), `lib/format.ts:formatTaskWhen`.
+- **Edit when:** changing anything about how tasks are arranged, edited, or added on the board.
+- **Risk:** Medium. Two subtleties: (1) `moveTask` is a pure function whose `index` argument
+  counts positions in the box **as rendered**, i.e. including the dragged task itself when
+  reordering within its own box — it compensates internally, so don't "fix" that offset at the
+  call site; (2) drop-position state (`dropTarget`) is set by the per-task `onDragOver`, which
+  calls `stopPropagation()` so the box-level handler (which targets the end of the list)
+  doesn't overwrite it. Native HTML5 drag also means **no touch support** — the edit form's
+  list dropdown is the non-drag way to move a task, and must stay.
+
+## `app/api/tasks/reorder/route.ts`
+- **Purpose:** `PATCH` endpoint that persists a drag-and-drop (re-parent + write the target
+  list's full order). Split into its own route rather than overloading `PATCH /api/tasks`,
+  which edits a single task.
+- **Calls:** `lib/tasks.ts:reorderTasks`, `lib/auth.ts:requireUserId`.
+- **Risk:** Medium — writes one row per task in the target list; every statement must stay
+  scoped by `user_id`.
 
 ## `scripts/create-users.mjs`
 - **Purpose:** One-off admin script to provision new Supabase Auth accounts (used exactly
@@ -264,7 +288,7 @@ Practical map of files a future coding agent is likely to touch. Trivial generat
 - **Risk:** High if run carelessly — uses the service-role admin API. There is no
   corresponding delete-user script committed to the repo.
 
-## `supabase/schema.sql` + `supabase/migrations/002..005*.sql`
+## `supabase/schema.sql` + `supabase/migrations/002..008*.sql`
 - **Purpose:** The full schema history, applied manually and in order via the Supabase SQL
   Editor. Full detail in [DATABASE.md](DATABASE.md).
 - **Risk:** Critical. Never edit an already-applied migration; add a new one. `004` in

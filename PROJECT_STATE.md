@@ -3,6 +3,44 @@
 **This file describes the exact state of the repository at the moment of the last update. It
 is meant to let a new session resume from precisely this point.**
 
+## 2026-08-24 update [Verified] — read this block first; it supersedes everything below
+
+Feature session, at the user's request: make the task board directly manipulable — drag tasks
+around like boxes, and edit tasks by hand instead of always asking the chat assistant.
+
+**Shipped in the working tree (NOT yet committed, NOT yet deployed as of this writing):**
+
+- `components/TaskBoard.tsx` — rewritten. One bordered box per category (plus Uncategorized
+  when non-empty); native HTML5 drag-and-drop between and within boxes with a drop-position
+  indicator; inline edit form on click (title, list, from/to dates, time); `＋` per box to add
+  a task; `＋ New list`; `🗑` on an empty box. Also fetches `/api/categories` now, so empty
+  boxes exist as drop targets.
+- `lib/tasks.ts` — new `createTask`, `updateTask`, `reorderTasks`, `createCategory`,
+  `deleteCategoryById`, `hasSortOrderColumn`; `listTasks` now applies hand-dragged order in JS.
+- `app/api/tasks/route.ts` — new `POST`; `PATCH` extended from status-only to any subset of
+  editable fields. New `app/api/tasks/reorder/route.ts`. `app/api/categories/route.ts` — new
+  `POST`/`DELETE`. `app/page.tsx` — passes `onDataChanged` so the sidebar resyncs.
+- `supabase/migrations/008_task_sort_order.sql` — **new, not yet run against the database.**
+
+**Verified this session:** `npx tsc --noEmit`, `npm run lint`, `npm run build` all exit 0; all
+five new/changed endpoints return 401 logged out and `/` still 307s to `/login`; the board was
+driven in a real Chromium browser (throwaway Playwright harness, stubbed API responses, no
+production data touched) with **16/16** interaction checks passing — cross-list drag,
+within-list reorder, exact reorder payloads, inline edit, re-listing via the dropdown,
+hand-add, list creation, dropping into an empty list, delete-button visibility rule.
+
+**Not verified (the honest gap):** the `sort_order` write path, because migration `008` has not
+been applied — confirmed directly against the live database, which returns
+`{"code":"42703","message":"column tasks.sort_order does not exist"}`. The code is written to
+tolerate exactly this (see `DECISIONS.md` DEC-014), so the board is safe to deploy in either
+order, but within-list ordering won't stick until a human runs the SQL. That's `T-002`.
+
+**One pre-existing thing observed, not caused by this work:** `npm run dev` on this machine
+initially failed to resolve `@swc/helpers` because Turbopack infers the workspace root as
+`~/Projects` (two lockfiles). Working around it needs `turbopack: { root: __dirname }` in
+`next.config.ts`; that workaround was used temporarily during testing and **reverted** —
+`next.config.ts` is unchanged. `npm run build` is unaffected. Worth fixing properly some time.
+
 ## 2026-08-16 update [Verified] — read this block first, it supersedes the stale framing below
 
 A documentation-sweep session (no feature work) re-verified everything against real repo

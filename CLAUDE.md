@@ -74,6 +74,22 @@ run**. Verified via `node_modules/next/dist/docs/01-app/03-api-reference/03-file
 
 ## Current status
 
+**2026-08-24 update [Verified], feature work — newest, read first:** The task board is now
+directly manipulable. Tasks drag between and within category boxes (native HTML5 DnD, no new
+dependency) and can be edited by hand — title, list, from/to dates, time — plus hand-adding
+tasks, creating empty lists, and deleting empty ones; none of that requires the chat assistant
+anymore. Rewrote `components/TaskBoard.tsx`; extended `lib/tasks.ts` (`createTask`,
+`updateTask`, `reorderTasks`, `createCategory`, `deleteCategoryById`, `hasSortOrderColumn`);
+`POST /api/tasks` added and `PATCH /api/tasks` generalized beyond status; new
+`app/api/tasks/reorder/route.ts`; `POST`/`DELETE /api/categories` added; new migration
+`supabase/migrations/008_task_sort_order.sql`. **Two caveats:** the work is uncommitted and
+undeployed as of this writing, and **migration `008` has not been run** — the code probes for
+`tasks.sort_order` (Postgres `42703`) and strips it from writes when it's absent, so the app is
+safe either way, but within-list ordering won't stick until a human runs the SQL (`T-002`).
+Verified: `tsc`/`lint`/`build` exit 0, all new endpoints 401 logged out, 16/16 real-browser
+interaction checks against stubbed APIs. See `DECISIONS.md` DEC-014, `FEATURES.md` §2,
+`PROJECT_STATE.md`'s 2026-08-24 block.
+
 **2026-08-16 update [Verified], documentation sweep (no feature work):** Two more feature
 commits landed since the 2026-08-07 audit below, both merged to `main` (HEAD `28f4fbb`, tree
 clean, no other branches outstanding): (1) `fff3db2`/`b9ca352` — `app/opengraph-image.tsx`
@@ -194,6 +210,7 @@ repo is cloned) — no monorepo path juggling.
 ```
 app/                      Next.js App Router pages + API routes
   api/{tasks,ideas,categories,templates,chat,notes,theme-image}/route.ts   JSON API, all except auth require login
+  api/tasks/reorder/route.ts   Persists a board drag-and-drop (re-parent + reorder)
   auth/callback/route.ts  Magic-link PKCE code exchange
   login/page.tsx          Public sign-in page (magic link only)
   page.tsx                Main board: Sidebar + TaskBoard + ChatPanel
@@ -230,8 +247,9 @@ lib/
   format.ts                   Date/time display formatting helpers
 supabase/
   schema.sql                Original base schema (categories, tasks, messages)
-  migrations/002..007.sql   Forward-only migrations, run manually in order (007 creates the
-                             theme-uploads Storage bucket, not just a table change)
+  migrations/002..008.sql   Forward-only migrations, run manually in order (007 creates the
+                             theme-uploads Storage bucket, not just a table change; 008 is the
+                             one migration the app can run without — see DECISIONS.md DEC-014)
 scripts/
   create-users.mjs          One-off admin script to provision the 2 allowed accounts
 public/theme/                Self-hosted curated theme photos (10 of them) + SOURCES.md.
@@ -388,9 +406,12 @@ gitignored (Verified in `.gitignore`).
 Full detail, including a Mermaid ER diagram, in [DATABASE.md](DATABASE.md). Short version:
 
 - **Provider:** Supabase (managed Postgres), project ref `hwvqnenmnrzdncwznorv`.
-- **Schema source of truth:** `supabase/schema.sql` + `supabase/migrations/002..005*.sql`,
+- **Schema source of truth:** `supabase/schema.sql` + `supabase/migrations/002..008*.sql`,
   applied **in order, manually**, via the Supabase SQL Editor. There is no automated
   migration runner.
+- **Migration `008` is the one migration the app does not hard-require** — see `DATABASE.md`
+  and `DECISIONS.md` DEC-014. Every other migration must be applied before the code that needs
+  it reaches production.
 - **Tables:** `categories`, `tasks`, `messages`, `ideas` — all 4 have `user_id uuid not null
   references auth.users(id)`, RLS enabled, and an owner-only RLS policy
   (`user_id = auth.uid()`). RLS is **defense-in-depth only** — the app's actual server code
@@ -436,7 +457,8 @@ version:
 
 Full detail with request/response shapes in [API_REFERENCE.md](API_REFERENCE.md). Summary:
 
-- **Internal API routes:** `GET/PATCH/DELETE /api/tasks`, `GET/PATCH /api/categories`,
+- **Internal API routes:** `GET/POST/PATCH/DELETE /api/tasks`, `PATCH /api/tasks/reorder`,
+  `GET/POST/PATCH/DELETE /api/categories`,
   `GET/POST/DELETE /api/ideas`, `POST /api/templates`, `POST /api/chat`, `GET /auth/callback`.
   All require an authenticated session except `/auth/callback` itself.
 - **External APIs:** A self-hosted, OpenAI-compatible AI platform at

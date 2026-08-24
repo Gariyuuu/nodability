@@ -16,6 +16,7 @@ export interface Task {
   end_date: string | null;
   due_time: string | null;
   status: "open" | "done";
+  sort_order: number | null;
   created_at: string;
 }
 
@@ -121,11 +122,20 @@ export async function listTasks(
     .eq("user_id", userId)
     .order("start_date", { ascending: true, nullsFirst: false });
   if (error) throw error;
-  return ((data ?? []) as TaskWithCategoryRow[]).map((row) => ({
+  const rows = ((data ?? []) as TaskWithCategoryRow[]).map((row) => ({
     ...row,
+    sort_order: row.sort_order ?? null,
     category_name: row.categories?.name ?? null,
     category_group: row.categories?.group_name ?? null,
   }));
+  // Hand-dragged position wins over the date ordering above; tasks that have never been
+  // dragged (sort_order null) keep their date order and sit after the arranged ones.
+  // Sorted in JS rather than via `.order("sort_order")` so this still works when migration
+  // 008 hasn't been run — see `hasSortOrderColumn`. Array.prototype.sort is stable, so ties
+  // preserve the date ordering.
+  return rows.sort(
+    (a, b) => (a.sort_order ?? Number.MAX_SAFE_INTEGER) - (b.sort_order ?? Number.MAX_SAFE_INTEGER),
+  );
 }
 
 export async function toggleTaskStatus(
@@ -280,4 +290,202 @@ export async function deleteTaskByTitle(
     found: true,
     deletedTitles: matches.map((m) => m.title),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Manual editing + drag-and-drop ordering (the "do it myself, without asking
+// Nodo" half of the board — see FEATURES.md).
+// ---------------------------------------------------------------------------
+
+/**
+ * Whether `tasks.sort_order` (migration 008) exists in this database.
+ *
+ * Probed once per server process and cached, so the board's drag-and-drop works even if
+ * migration 008 hasn't been pasted into the Supabase SQL Editor yet — writes simply drop the
+ * column and only the position *within* a box is forgotten. A transient failure is not
+ * cached, so a later request re-probes.
+ */
+let sortOrderSupport: Promise<boolean> | null = null;
+
+export function hasSortOrderColumn(): Promise<boolean> {
+  sortOrderSupport ??= probeSortOrderColumn();
+  return sortOrderSupport;
+}
+
+async function probeSortOrderColumn(): Promise<boolean> {
+  const { error } = await supabase.from("tasks").select("sort_order").limit(1);
+  if (!error) return true;
+  // 42703 = undefined_column. Anything else is transient (network/permissions) — forget the
+  // cached answer so the next call probes again instead of permanently degrading.
+  if (error.code !== "42703") sortOrderSupport = null;
+  return false;
+}
+
+async function nextSortOrder(userId: string, categoryId: string | null): Promise<number | null> {
+  if (!(await hasSortOrderColumn())) return null;
+
+  let query = supabase
+    .from("tasks")
+    .select("sort_order")
+    .eq("user_id", userId)
+    .order("sort_order", { ascending: false, nullsFirst: false })
+    .limit(1);
+  query = categoryId ? query.eq("category_id", categoryId) : query.is("category_id", null);
+
+  const { data } = await query;
+  const highest = (data?.[0] as { sort_order: number | null } | undefined)?.sort_order;
+  return typeof highest === "number" ? highest + 1 : 0;
+}
+
+/**
+ * Create a task by hand (the board's "+ Add task"), as opposed to `insertTask`, which is the
+ * chat-extraction path. Resolves/creates the category by name and appends the task to the
+ * bottom of that box.
+ */
+export async function createTask(
+  userId: string,
+  params: {
+    title: string;
+    categoryName: string | null;
+    startDate: string | null;
+    endDate: string | null;
+    dueTime: string | null;
+  },
+): Promise<Task & { category_name: string | null }> {
+  const category = params.categoryName?.trim()
+    ? await getOrCreateCategory(userId, params.categoryName)
+    : null;
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .insert({
+      user_id: userId,
+      title: params.title.trim(),
+      category_id: category?.id ?? null,
+      start_date: params.startDate,
+      end_date: params.endDate,
+      due_time: params.dueTime,
+      ...((await hasSortOrderColumn())
+        ? { sort_order: await nextSortOrder(userId, category?.id ?? null) }
+        : {}),
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return { ...(data as Task), category_name: category?.name ?? null };
+}
+
+export interface TaskEdit {
+  title?: string;
+  status?: "open" | "done";
+  categoryName?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  dueTime?: string | null;
+}
+
+/**
+ * Edit any field of a task by hand. Only the keys actually present in `edit` are written, so
+ * a title-only save can't blank out the dates. Moving a task out of a category deliberately
+ * leaves the old category behind even if it's now empty (unlike `deleteTask`) — an empty box
+ * is still a useful drop target, and the board offers an explicit delete for it.
+ */
+export async function updateTask(
+  userId: string,
+  id: string,
+  edit: TaskEdit,
+): Promise<Task & { category_name: string | null }> {
+  const patch: Record<string, unknown> = {};
+  if (edit.title !== undefined) patch.title = edit.title.trim();
+  if (edit.status !== undefined) patch.status = edit.status;
+  if (edit.startDate !== undefined) patch.start_date = edit.startDate || null;
+  if (edit.endDate !== undefined) patch.end_date = edit.endDate || null;
+  if (edit.dueTime !== undefined) patch.due_time = edit.dueTime || null;
+
+  let categoryName: string | null | undefined = undefined;
+  if (edit.categoryName !== undefined) {
+    const category = edit.categoryName?.trim()
+      ? await getOrCreateCategory(userId, edit.categoryName)
+      : null;
+    patch.category_id = category?.id ?? null;
+    categoryName = category?.name ?? null;
+  }
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .update(patch)
+    .eq("id", id)
+    .eq("user_id", userId)
+    .select("*, categories(name)")
+    .single();
+  if (error) throw error;
+
+  const row = data as Task & { categories: { name: string } | null };
+  return {
+    ...row,
+    category_name: categoryName !== undefined ? categoryName : (row.categories?.name ?? null),
+  };
+}
+
+/**
+ * Persist a drag-and-drop: `orderedIds` is the target box's full contents in their new order,
+ * top to bottom. `movedTaskId`, when given, is re-parented into `categoryId` first (that's the
+ * "dropped into a different box" case). Ordering is skipped when migration 008 is missing.
+ */
+export async function reorderTasks(
+  userId: string,
+  params: { categoryId: string | null; orderedIds: string[]; movedTaskId: string | null },
+): Promise<{ ordered: boolean }> {
+  if (params.movedTaskId) {
+    const { error } = await supabase
+      .from("tasks")
+      .update({ category_id: params.categoryId })
+      .eq("id", params.movedTaskId)
+      .eq("user_id", userId);
+    if (error) throw error;
+  }
+
+  if (!(await hasSortOrderColumn())) return { ordered: false };
+
+  // One statement per task: the board holds a couple of dozen tasks at most, so a bulk upsert
+  // (which would need every not-null column restated) isn't worth the risk here.
+  for (const [index, id] of params.orderedIds.entries()) {
+    const { error } = await supabase
+      .from("tasks")
+      .update({ sort_order: index })
+      .eq("id", id)
+      .eq("user_id", userId);
+    if (error) throw error;
+  }
+
+  return { ordered: true };
+}
+
+export async function createCategory(userId: string, name: string): Promise<Category> {
+  return getOrCreateCategory(userId, name);
+}
+
+/**
+ * Delete a category the user emptied out. Refuses while tasks still reference it — the FK has
+ * no ON DELETE clause, so the DB would reject it anyway (see DATABASE.md).
+ */
+export async function deleteCategoryById(
+  userId: string,
+  id: string,
+): Promise<{ deleted: boolean; taskCount: number }> {
+  const { count, error: countError } = await supabase
+    .from("tasks")
+    .select("id", { count: "exact", head: true })
+    .eq("category_id", id)
+    .eq("user_id", userId);
+  if (countError) throw countError;
+  if ((count ?? 0) > 0) return { deleted: false, taskCount: count ?? 0 };
+
+  const { error } = await supabase
+    .from("categories")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", userId);
+  if (error) throw error;
+  return { deleted: true, taskCount: 0 };
 }

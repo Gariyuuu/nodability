@@ -50,7 +50,11 @@ export default function Home() {
             onSelect={setSelectedCategory}
           />
           <div className="flex-1 overflow-y-auto pr-4">
-            <TaskBoard refreshKey={refreshKey} filterCategory={selectedCategory} />
+            <TaskBoard
+              refreshKey={refreshKey}
+              filterCategory={selectedCategory}
+              onDataChanged={bumpRefresh}
+            />
           </div>
         </div>
         <div className="w-96 shrink-0 border-l border-border p-6">

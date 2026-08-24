@@ -881,3 +881,53 @@ this file existed; dates are taken from `git log` where possible.
   verification, `AI_PLATFORM_API_KEY` missing from Preview, authenticated `/api/chat` smoke
   test).
 - **Recommended next action:** Do `T-001`, then the previously-recommended items above.
+
+## 2026-08-24 — Drag-and-drop board + hand-editable tasks (feature session)
+
+- **Trigger:** User request, verbatim: *"update nodability so i can drag the stuff around, hte
+  tasks like a dropbox and then i can also manually edit my task insread of asking nodo all the
+  time"* — i.e. two things: direct manipulation of tasks between category boxes, and editing
+  tasks by hand rather than through the chat assistant.
+- **Starting state:** `main` @ `367fd9f`, tree clean. `components/TaskBoard.tsx` was a
+  read-mostly grouped list (checkbox + delete only); every task/category mutation beyond those
+  two went through the chat extraction flow.
+- **Work completed:**
+  - `supabase/migrations/008_task_sort_order.sql` (new) — `tasks.sort_order integer` +
+    `tasks_sort_order_idx(category_id, sort_order)`.
+  - `lib/tasks.ts` — added `hasSortOrderColumn` (cached `42703` probe), `nextSortOrder`,
+    `createTask`, `updateTask`, `reorderTasks`, `createCategory`, `deleteCategoryById`; added
+    `sort_order` to the `Task` interface; `listTasks` now sorts by hand-dragged order in JS
+    (stable sort, `null` last) so it works with or without the migration.
+  - `app/api/tasks/route.ts` — new `POST` (manual create); `PATCH` generalized from status-only
+    to any subset of `{status,title,categoryName,startDate,endDate,dueTime}`, writing only the
+    keys present. `app/api/tasks/reorder/route.ts` (new) — batch re-parent + order.
+    `app/api/categories/route.ts` — new `POST` (create list) and `DELETE` (409 if non-empty).
+  - `components/TaskBoard.tsx` — full rewrite (see `FEATURES.md` §2 and `FILE_MAP.md`).
+  - `app/page.tsx` — passes `onDataChanged={bumpRefresh}` so the `Sidebar` resyncs when a
+    category is created or removed.
+  - Docs: `FEATURES.md`, `API_REFERENCE.md`, `DATABASE.md`, `FILE_MAP.md`, `DECISIONS.md`
+    (DEC-014), `CHANGELOG.md`, `lib/changelog.ts` (user-facing v0.9), `PROJECT_STATE.md`,
+    `TASKS.md` (`T-002`), `HANDOFF.md`, `CLAUDE.md`.
+- **Verification performed:** `npx tsc --noEmit`, `npm run lint`, `npm run build` — all exit 0.
+  Logged-out gating re-checked on the running dev server: `GET /api/tasks`,
+  `PATCH /api/tasks/reorder`, `POST /api/tasks`, `POST /api/categories`,
+  `DELETE /api/categories` → 401; `GET /` → 307. Real-browser UX verification: a throwaway
+  Playwright harness (Chromium, kept in the session scratchpad, **not** committed — matches
+  this repo's existing ad-hoc-script practice) drove the actual board with **all `/api/*`
+  requests stubbed**, so no production data was read or written; 16/16 checks passed, including
+  the two that matter most — cross-list drag producing
+  `{"categoryId":"c2","orderedIds":["t2","t4"],"movedTaskId":"t2"}` and within-list reorder
+  producing `orderedIds:["t3","t1"]`. Screenshots reviewed for layout.
+- **Method note worth keeping:** to render the authenticated board in a headless browser,
+  `proxy.ts` was **moved aside temporarily** (never edited) and restored immediately after —
+  `diff` against a backup confirmed it is byte-identical, and `git status` shows it unmodified.
+  Turbopack also needed a temporary `turbopack: { root: __dirname }` in `next.config.ts` to
+  resolve `@swc/helpers` (this machine has two lockfiles — a pre-existing dev-only issue, not
+  caused by this work); that was reverted too. Both files are unchanged in git.
+- **Work remaining:** `T-002` — a human must paste migration `008` into the Supabase SQL
+  Editor, then live-verify that within-list ordering persists across a reload. Until then the
+  app runs fine but forgets within-list positions (by design, `DECISIONS.md` DEC-014).
+  `T-001` (live-verify `ThinkingOrb`) still open from 2026-08-16. Nothing is committed or
+  deployed yet — this repo deploys manually (`vercel --prod --yes`); `git push` does not.
+- **Recommended next action:** Run migration `008`, then commit + `vercel --prod --yes`, then
+  do the `T-002` live check on production.
