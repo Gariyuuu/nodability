@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./design-system/master.css";
 
 /*
  * Palettes: each defines the same 7 semantic roles (bg/fg/surface/border/
@@ -11,6 +12,7 @@
  */
 :root,
 :root[data-palette="slate"] {
+  --ring: var(--accent);
   --bg: #ffffff;
   --fg: #171717;
   --surface: #f3f4f6;
@@ -21,8 +23,10 @@
   --bg-art:
     linear-gradient(rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.82)),
     url("/theme/slate.jpg");
+  --input: oklch(0.30 0.015 220);
 }
 :root[data-palette="slate"][data-theme="dark"] {
+  --ring: var(--accent);
   --bg: #0a0a0a;
   --fg: #ededed;
   --surface: #1a1a1a;
@@ -33,9 +37,11 @@
   --bg-art:
     linear-gradient(rgba(10, 10, 10, 0.85), rgba(10, 10, 10, 0.85)),
     url("/theme/slate.jpg");
+  --input: oklch(0.52 0.015 260);
 }
 
 :root[data-palette="ocean"] {
+  --ring: var(--accent);
   --bg: #f7fbfd;
   --fg: #0f2a3d;
   --surface: #e6f2f7;
@@ -46,8 +52,10 @@
   --bg-art:
     linear-gradient(rgba(247, 251, 253, 0.8), rgba(247, 251, 253, 0.8)),
     url("/theme/ocean.jpg");
+  --input: oklch(0.30 0.015 198);
 }
 :root[data-palette="ocean"][data-theme="dark"] {
+  --ring: var(--accent);
   --bg: #071a24;
   --fg: #dff0f7;
   --surface: #0e2731;
@@ -58,9 +66,11 @@
   --bg-art:
     linear-gradient(rgba(7, 26, 36, 0.85), rgba(7, 26, 36, 0.85)),
     url("/theme/ocean.jpg");
+  --input: oklch(0.54 0.015 197);
 }
 
 :root[data-palette="sunset"] {
+  --ring: #e05f30;   /* --accent is 2.91:1 here; L moved, hue+chroma held */
   --bg: #fff8f4;
   --fg: #3a1f14;
   --surface: #fdece0;
@@ -71,8 +81,10 @@
   --bg-art:
     linear-gradient(rgba(255, 248, 244, 0.8), rgba(255, 248, 244, 0.8)),
     url("/theme/sunset.jpg");
+  --input: oklch(0.30 0.015 25);
 }
 :root[data-palette="sunset"][data-theme="dark"] {
+  --ring: var(--accent);
   --bg: #241109;
   --fg: #ffe9db;
   --surface: #331808;
@@ -83,9 +95,11 @@
   --bg-art:
     linear-gradient(rgba(36, 17, 9, 0.85), rgba(36, 17, 9, 0.85)),
     url("/theme/sunset.jpg");
+  --input: oklch(0.53 0.015 22);
 }
 
 :root[data-palette="forest"] {
+  --ring: var(--accent);
   --bg: #f6faf6;
   --fg: #14261a;
   --surface: #e8f3e9;
@@ -96,8 +110,10 @@
   --bg-art:
     linear-gradient(rgba(246, 250, 246, 0.8), rgba(246, 250, 246, 0.8)),
     url("/theme/forest.jpg");
+  --input: oklch(0.30 0.015 125);
 }
 :root[data-palette="forest"][data-theme="dark"] {
+  --ring: var(--accent);
   --bg: #0c1811;
   --fg: #dcefe0;
   --surface: #16281c;
@@ -108,9 +124,11 @@
   --bg-art:
     linear-gradient(rgba(12, 24, 17, 0.85), rgba(12, 24, 17, 0.85)),
     url("/theme/forest.jpg");
+  --input: oklch(0.54 0.015 140);
 }
 
 :root[data-palette="rose"] {
+  --ring: var(--accent);
   --bg: #fff5f7;
   --fg: #4a1d28;
   --surface: #ffe4ea;
@@ -121,8 +139,10 @@
   --bg-art:
     linear-gradient(rgba(255, 245, 247, 0.8), rgba(255, 245, 247, 0.8)),
     url("/theme/rose.jpg");
+  --input: oklch(0.30 0.015 347);
 }
 :root[data-palette="rose"][data-theme="dark"] {
+  --ring: var(--accent);
   --bg: #26121a;
   --fg: #ffe1e8;
   --surface: #3a1a24;
@@ -133,9 +153,11 @@
   --bg-art:
     linear-gradient(rgba(38, 18, 26, 0.85), rgba(38, 18, 26, 0.85)),
     url("/theme/rose.jpg");
+  --input: oklch(0.55 0.015 341);
 }
 
 :root[data-palette="mint"] {
+  --ring: #119878;   /* --accent is 2.19:1 here; L moved, hue+chroma held */
   --bg: #f3faf7;
   --fg: #133328;
   --surface: #dff3ec;
@@ -146,8 +168,10 @@
   --bg-art:
     linear-gradient(rgba(243, 250, 247, 0.8), rgba(243, 250, 247, 0.8)),
     url("/theme/mint.jpg");
+  --input: oklch(0.30 0.015 159);
 }
 :root[data-palette="mint"][data-theme="dark"] {
+  --ring: var(--accent);
   --bg: #071a15;
   --fg: #d8f5ea;
   --surface: #0f2a22;
@@ -158,9 +182,11 @@
   --bg-art:
     linear-gradient(rgba(7, 26, 21, 0.85), rgba(7, 26, 21, 0.85)),
     url("/theme/mint.jpg");
+  --input: oklch(0.55 0.015 162);
 }
 
 :root[data-palette="lavender"] {
+  --ring: var(--accent);
   --bg: #faf8ff;
   --fg: #2e2647;
   --surface: #ece5fb;
@@ -171,8 +197,10 @@
   --bg-art:
     linear-gradient(rgba(250, 248, 255, 0.8), rgba(250, 248, 255, 0.8)),
     url("/theme/lavender.jpg");
+  --input: oklch(0.30 0.015 259);
 }
 :root[data-palette="lavender"][data-theme="dark"] {
+  --ring: var(--accent);
   --bg: #170f26;
   --fg: #ece5fb;
   --surface: #241a3a;
@@ -183,9 +211,11 @@
   --bg-art:
     linear-gradient(rgba(23, 15, 38, 0.85), rgba(23, 15, 38, 0.85)),
     url("/theme/lavender.jpg");
+  --input: oklch(0.53 0.015 259);
 }
 
 :root[data-palette="amber"] {
+  --ring: #b57c19;   /* --accent is 2.54:1 here; L moved, hue+chroma held */
   --bg: #fffaf0;
   --fg: #402c0e;
   --surface: #fbedd0;
@@ -196,8 +226,10 @@
   --bg-art:
     linear-gradient(rgba(255, 250, 240, 0.78), rgba(255, 250, 240, 0.78)),
     url("/theme/amber.jpg");
+  --input: oklch(0.30 0.015 40);
 }
 :root[data-palette="amber"][data-theme="dark"] {
+  --ring: var(--accent);
   --bg: #241a08;
   --fg: #ffe9bd;
   --surface: #382608;
@@ -208,9 +240,11 @@
   --bg-art:
     linear-gradient(rgba(36, 26, 8, 0.85), rgba(36, 26, 8, 0.85)),
     url("/theme/amber.jpg");
+  --input: oklch(0.56 0.015 38);
 }
 
 :root[data-palette="midnight"] {
+  --ring: var(--accent);
   --bg: #f5f6fb;
   --fg: #10142b;
   --surface: #e4e7f5;
@@ -221,8 +255,10 @@
   --bg-art:
     linear-gradient(rgba(245, 246, 251, 0.82), rgba(245, 246, 251, 0.82)),
     url("/theme/midnight.jpg");
+  --input: oklch(0.30 0.015 229);
 }
 :root[data-palette="midnight"][data-theme="dark"] {
+  --ring: var(--accent);
   --bg: #05060f;
   --fg: #dfe2f7;
   --surface: #0c0f1f;
@@ -233,9 +269,11 @@
   --bg-art:
     linear-gradient(rgba(5, 6, 15, 0.7), rgba(5, 6, 15, 0.7)),
     url("/theme/midnight.jpg");
+  --input: oklch(0.50 0.015 231);
 }
 
 :root[data-palette="coral"] {
+  --ring: #e75121;   /* --accent is 2.96:1 here; L moved, hue+chroma held */
   --bg: #fff6f2;
   --fg: #401c10;
   --surface: #ffe4d6;
@@ -246,8 +284,10 @@
   --bg-art:
     linear-gradient(rgba(255, 246, 242, 0.8), rgba(255, 246, 242, 0.8)),
     url("/theme/coral.jpg");
+  --input: oklch(0.30 0.015 20);
 }
 :root[data-palette="coral"][data-theme="dark"] {
+  --ring: var(--accent);
   --bg: #23100a;
   --fg: #ffe0d0;
   --surface: #351811;
@@ -258,6 +298,7 @@
   --bg-art:
     linear-gradient(rgba(35, 16, 10, 0.85), rgba(35, 16, 10, 0.85)),
     url("/theme/coral.jpg");
+  --input: oklch(0.54 0.015 12);
 }
 
 /* "Custom" palette: neutral Slate-like tokens. Deliberately has no --bg-art
@@ -267,6 +308,7 @@
    specificity. If no custom image has been uploaded yet, this palette
    simply has no background art (falls back to the flat --bg color). */
 :root[data-palette="custom"] {
+  --ring: var(--accent);
   --bg: #ffffff;
   --fg: #171717;
   --surface: #f3f4f6;
@@ -274,8 +316,10 @@
   --muted: #6b7280;
   --accent: #111827;
   --accent-fg: #ffffff;
+  --input: oklch(0.30 0.015 220);
 }
 :root[data-palette="custom"][data-theme="dark"] {
+  --ring: var(--accent);
   --bg: #0a0a0a;
   --fg: #ededed;
   --surface: #1a1a1a;
@@ -283,9 +327,11 @@
   --muted: #9ca3af;
   --accent: #e5e7eb;
   --accent-fg: #111827;
+  --input: oklch(0.52 0.015 260);
 }
 
 @theme inline {
+  --color-input: var(--input);
   --color-bg: var(--bg);
   --color-fg: var(--fg);
   --color-surface: var(--surface);

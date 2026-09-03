@@ -304,7 +304,7 @@ export default function TaskBoard({
           value={draft.startDate}
           onChange={(e) => setDraft({ ...draft, startDate: e.target.value })}
           aria-label="Start date"
-          className="rounded border border-border bg-bg px-2 py-1 text-xs text-fg"
+          className="rounded border border-input bg-bg px-2 py-1 text-xs text-fg"
         />
       </label>
       <label className="flex items-center gap-1">
@@ -314,7 +314,7 @@ export default function TaskBoard({
           value={draft.endDate}
           onChange={(e) => setDraft({ ...draft, endDate: e.target.value })}
           aria-label="End date (for multi-day things)"
-          className="rounded border border-border bg-bg px-2 py-1 text-xs text-fg"
+          className="rounded border border-input bg-bg px-2 py-1 text-xs text-fg"
         />
       </label>
       <label className="flex items-center gap-1">
@@ -324,7 +324,7 @@ export default function TaskBoard({
           value={draft.dueTime}
           onChange={(e) => setDraft({ ...draft, dueTime: e.target.value })}
           aria-label="Time"
-          className="rounded border border-border bg-bg px-2 py-1 text-xs text-fg"
+          className="rounded border border-input bg-bg px-2 py-1 text-xs text-fg"
         />
       </label>
     </div>
@@ -355,7 +355,7 @@ export default function TaskBoard({
               onKeyDown={(e) => e.key === "Escape" && setNewCategory(null)}
               placeholder="List name…"
               aria-label="New list name"
-              className="rounded border border-border bg-bg px-2 py-1 text-xs text-fg"
+              className="rounded border border-input bg-bg px-2 py-1 text-xs text-fg"
             />
             <button
               type="submit"
@@ -471,7 +471,7 @@ export default function TaskBoard({
                         onChange={(e) => setEditDraft({ ...editDraft, title: e.target.value })}
                         onKeyDown={(e) => e.key === "Escape" && setEditingId(null)}
                         aria-label="Task title"
-                        className="w-full rounded border border-border bg-bg px-2 py-1 text-sm text-fg"
+                        className="w-full rounded border border-input bg-bg px-2 py-1 text-sm text-fg"
                       />
                       <div className="flex flex-wrap items-center gap-2">
                         <select
@@ -480,7 +480,7 @@ export default function TaskBoard({
                             setEditDraft({ ...editDraft, categoryName: e.target.value })
                           }
                           aria-label="List"
-                          className="rounded border border-border bg-bg px-2 py-1 text-xs text-fg"
+                          className="rounded border border-input bg-bg px-2 py-1 text-xs text-fg"
                         >
                           <option value="">Uncategorized</option>
                           {categoryNames.map((name) => (
@@ -597,7 +597,7 @@ export default function TaskBoard({
                       onKeyDown={(e) => e.key === "Escape" && setAddingTo(null)}
                       placeholder={`New task in ${box.name}…`}
                       aria-label="New task title"
-                      className="w-full rounded border border-border bg-bg px-2 py-1 text-sm text-fg"
+                      className="w-full rounded border border-input bg-bg px-2 py-1 text-sm text-fg"
                     />
                     {draftFields(addDraft, setAddDraft)}
                     <div className="flex items-center gap-2">

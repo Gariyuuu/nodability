@@ -52,7 +52,7 @@ function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && sendLink()}
               placeholder="you@example.com"
-              className="mb-3 w-full rounded border border-border bg-bg px-3 py-2 text-sm outline-none focus:border-accent"
+              className="mb-3 w-full rounded border border-input bg-bg px-3 py-2 text-sm outline-none focus:border-accent"
             />
             <button
               onClick={sendLink}

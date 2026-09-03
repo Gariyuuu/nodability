@@ -86,7 +86,7 @@ export default function IdeasPage() {
               }}
               placeholder="Jot down an idea…"
               rows={2}
-              className="flex-1 resize-none rounded border border-border bg-bg px-3 py-2 text-sm outline-none focus:border-accent"
+              className="flex-1 resize-none rounded border border-input bg-bg px-3 py-2 text-sm outline-none focus:border-accent"
             />
             <button
               onClick={save}
