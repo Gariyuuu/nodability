@@ -200,12 +200,12 @@ export default function NotesPage() {
                 value={draftTitle}
                 onChange={(e) => setDraftTitle(e.target.value)}
                 placeholder="Note title"
-                className="w-full rounded border border-border bg-bg px-3 py-2 text-sm font-semibold outline-none focus:border-accent"
+                className="w-full rounded border border-input bg-bg px-3 py-2 text-sm font-semibold outline-none focus:border-accent"
               />
               <select
                 value={draftCategoryId}
                 onChange={(e) => setDraftCategoryId(e.target.value)}
-                className="w-full rounded border border-border bg-bg px-3 py-2 text-sm outline-none focus:border-accent"
+                className="w-full rounded border border-input bg-bg px-3 py-2 text-sm outline-none focus:border-accent"
               >
                 <option value="">No class / uncategorized</option>
                 {categories.map((c) => (
@@ -219,7 +219,7 @@ export default function NotesPage() {
                 onChange={(e) => setDraftContent(e.target.value)}
                 placeholder="Write your note. Link to another note with [[Note Title]]."
                 rows={14}
-                className="w-full resize-none rounded border border-border bg-bg px-3 py-2 text-sm outline-none focus:border-accent"
+                className="w-full resize-none rounded border border-input bg-bg px-3 py-2 text-sm outline-none focus:border-accent"
               />
               {outgoingLinks.length > 0 && (
                 <div className="text-xs text-muted">

@@ -182,7 +182,7 @@ export default function ChatPanel({ onTasksChanged }: { onTasksChanged: () => vo
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
           placeholder="e.g. Chem lab report due Friday"
-          className="flex-1 rounded border border-border bg-bg px-3 py-2 text-sm outline-none focus:border-accent"
+          className="flex-1 rounded border border-input bg-bg px-3 py-2 text-sm outline-none focus:border-accent"
         />
         <button
           onClick={() => send()}
